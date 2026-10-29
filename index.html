@@ -12,10 +12,10 @@
       -webkit-font-smoothing: antialiased;
     }
     .glass-panel {
-      background: rgba(255, 255, 255, 0.9);
+      background: rgba(255, 255, 255, 0.95);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(226, 232, 240, 0.8);
+      border: 1px solid rgba(226, 232, 240, 0.9);
     }
     .code-box {
       background: #0f172a;
@@ -23,222 +23,449 @@
     }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen pb-16">
+<body class="bg-slate-50 text-slate-800 min-h-screen pb-20">
 
-  <!-- 頂部導航 (已完全移除外部代碼庫連結，保持純淨校園管理風格) -->
-  <header class="sticky top-0 z-50 glass-panel border-b border-slate-200/80 px-6 py-4 flex items-center justify-between shadow-xs">
+  <!-- 頂部導航 -->
+  <header class="sticky top-0 z-40 glass-panel border-b border-slate-200/80 px-4 sm:px-8 py-3.5 flex items-center justify-between shadow-xs">
     <div class="flex items-center space-x-3">
-      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white font-black text-xl shadow-md shadow-emerald-500/20">
+      <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white font-black text-xl shadow-md shadow-emerald-500/20">
         💬
       </div>
       <div>
-        <h1 class="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+        <h1 class="text-sm sm:text-base font-black text-slate-900 flex items-center gap-2">
           School LINE Hub
-          <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
-            v2.1.2 穩定繁中版
+          <span class="text-2xs font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+            v2.2.3 穩定正式版
           </span>
         </h1>
-        <p class="text-xs text-slate-500">校園官方帳號推播與家長綁定統一管理中心</p>
+        <p class="text-2xs sm:text-xs text-slate-500">校園官方帳號推播 ‧ 家長單一綁定 ‧ 多專案共用中心</p>
       </div>
     </div>
+    
     <div class="flex items-center space-x-2">
-      <a href="#changelog" class="px-3 py-1.5 text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg transition-all flex items-center gap-1 shadow-2xs">
-        📝 系統更新紀錄
-      </a>
-      <a href="#setup-guide" class="px-3 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg transition-all flex items-center gap-1 shadow-2xs">
-        📖 初次設定教學
+      <!-- 更新紀錄按鈕 (收納至右上角，點擊才開啟) -->
+      <button onclick="openChangelogModal()" class="px-3 py-1.5 text-xs font-bold text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 rounded-xl transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer active:scale-95" title="查看系統版本更新紀錄">
+        <span>📝</span>
+        <span class="hidden sm:inline">版本紀錄</span>
+        <span class="text-2xs font-mono px-1.5 py-0.2 bg-slate-100 rounded text-slate-500">v2.2.3</span>
+      </button>
+
+      <a href="#setup-guide" class="px-3 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition-all flex items-center gap-1 shadow-2xs">
+        📖 <span class="hidden sm:inline">初次設定教學</span>
       </a>
     </div>
   </header>
 
-  <main class="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
 
-    <!-- 自動熱更新特點橫幅 -->
-    <div class="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-      <div class="flex items-center gap-3">
-        <span class="text-3xl">🔄</span>
-        <div>
-          <h2 class="text-sm sm:text-base font-bold">已啟用「免手動重貼程式碼」自動熱更新機制！</h2>
-          <p class="text-xs text-emerald-100 mt-0.5">試算表只需貼入下方穩健引導碼，未來改版中樞自動同步最新邏輯，完全零維運負擔。</p>
+    <!-- ================================================================= -->
+    <!-- 頂部核心一：中樞正式網址與即時狀態條 (最重要資訊置頂) -->
+    <!-- ================================================================= -->
+    <section class="p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white shadow-xl shadow-indigo-950/15 border border-slate-800 space-y-4">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div class="space-y-1">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span class="text-xs font-extrabold uppercase tracking-wider text-emerald-400">目前活躍中樞正式網址 (Active Web App URL)</span>
+            <span class="text-2xs bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/30 font-bold">永久固定 ‧ 免重複設定</span>
+          </div>
+          <h2 class="text-base sm:text-lg font-black text-white">所有子專案與 LINE Developers 後台請統一連線此網址</h2>
+        </div>
+
+        <!-- 即時連線檢測按鈕 -->
+        <div class="flex items-center gap-2 self-start md:self-auto shrink-0">
+          <button onclick="pingHubHealth()" id="btn-ping" class="min-h-[38px] px-3.5 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs rounded-xl transition flex items-center gap-1.5 shadow-md shadow-emerald-500/25 active:scale-95 cursor-pointer">
+            <span id="ping-icon">📶</span>
+            <span id="ping-text">即時檢測中樞連線</span>
+          </button>
         </div>
       </div>
-      <a href="#loader-code-section" class="px-3.5 py-2 bg-white text-emerald-800 font-bold rounded-xl text-xs hover:bg-emerald-50 transition-all shadow-xs whitespace-nowrap">
-        一鍵複製穩健引導碼 ⚡
-      </a>
-    </div>
 
-    <!-- 概覽數據卡片 -->
+      <!-- 網址顯示與一鍵複製列 -->
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 p-1.5 bg-slate-950/80 rounded-2xl border border-slate-800">
+        <div class="flex-1 px-3 py-2 font-mono text-xs text-emerald-300 truncate select-all" id="hub-active-url">
+          https://script.google.com/macros/s/AKfycby4yrSdmztcbnmdHlGdLqqM9nBRT4vo6DwK8LmW1R-wi22qEKC_vcD-VvrDnUTp4Bm_Yg/exec
+        </div>
+        <button onclick="copyActiveHubUrl()" id="btn-copy-url" class="min-h-[38px] px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-sm active:scale-95 cursor-pointer whitespace-nowrap">
+          <span>📋</span>
+          <span>複製中樞網址</span>
+        </button>
+      </div>
+
+      <!-- 連線檢測即時回報欄 (動態顯示) -->
+      <div id="ping-result-box" class="hidden p-3.5 rounded-2xl bg-emerald-950/60 border border-emerald-500/40 text-xs text-emerald-200 font-mono space-y-1">
+        <div class="flex items-center gap-2 text-emerald-300 font-bold font-sans">
+          <span>✅</span>
+          <span>中樞後端伺服器回應正常！</span>
+        </div>
+        <div class="text-2xs text-slate-300 font-mono" id="ping-details-text">
+          檢測時間：-
+        </div>
+      </div>
+
+      <!-- 快速提示 -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-2xs text-slate-400 pt-1 border-t border-slate-800/80">
+        <div class="flex items-center gap-1.5">
+          <span class="text-emerald-400">✓</span>
+          <span><strong>LINE Developers</strong>：Webhook URL 填此網址並開啟 Use Webhook</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span class="text-indigo-400">✓</span>
+          <span><strong>子專案系統</strong>：MPScore-Daily、RP_QR_CC_HW 自動預設連線此網址</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================= -->
+    <!-- 頂部核心二：重要查看數據概覽 (4 大指標) -->
+    <!-- ================================================================= -->
     <section class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
       <div class="glass-panel p-4 sm:p-5 rounded-2xl shadow-2xs border-l-4 border-l-emerald-500">
-        <p class="text-2xs sm:text-xs font-bold uppercase tracking-wider text-slate-500">已綁定家長總數</p>
+        <p class="text-2xs sm:text-xs font-bold uppercase tracking-wider text-slate-500">全校/全班已綁定家長</p>
         <div class="mt-2 flex items-baseline gap-1.5">
-          <span class="text-2xl sm:text-3xl font-extrabold text-slate-900" id="stat-bindings">28</span>
+          <span class="text-2xl sm:text-3xl font-black text-slate-900" id="stat-bindings">13</span>
           <span class="text-xs text-emerald-600 font-bold">位家庭</span>
         </div>
-        <p class="mt-1 text-2xs text-slate-400">官方帳號全校/班級共用</p>
+        <p class="mt-1 text-2xs text-slate-400">官方帳號單一綁定、跨專案通用</p>
       </div>
 
       <div class="glass-panel p-4 sm:p-5 rounded-2xl shadow-2xs border-l-4 border-l-indigo-500">
-        <p class="text-2xs sm:text-xs font-bold uppercase tracking-wider text-slate-500">已授權子專案</p>
+        <p class="text-2xs sm:text-xs font-bold uppercase tracking-wider text-slate-500">已授權接入專案</p>
         <div class="mt-2 flex items-baseline gap-1.5">
-          <span class="text-2xl sm:text-3xl font-extrabold text-slate-900">2</span>
+          <span class="text-2xl sm:text-3xl font-black text-slate-900">3</span>
           <span class="text-xs text-indigo-600 font-bold">個系統</span>
         </div>
-        <p class="mt-1 text-2xs text-slate-400">作業手札、成績系統等</p>
+        <p class="mt-1 text-2xs text-slate-400">作業手札、成績系統、聯絡簿</p>
       </div>
 
-      <div class="glass-panel p-4 sm:p-5 rounded-2xl shadow-2xs border-l-4 border-l-blue-500">
-        <p class="text-2xs sm:text-xs font-bold uppercase tracking-wider text-slate-500">本月發送額度</p>
+      <div class="glass-panel p-4 sm:p-5 rounded-2xl shadow-2xs border-l-4 border-l-amber-500">
+        <p class="text-2xs sm:text-xs font-bold uppercase tracking-wider text-slate-500">LINE 官方免費額度</p>
         <div class="mt-2 flex items-baseline gap-1.5">
-          <span class="text-2xl sm:text-3xl font-extrabold text-slate-900">228</span>
-          <span class="text-xs text-blue-600 font-bold">/ 2000 則</span>
+          <span class="text-2xl sm:text-3xl font-black text-slate-900" id="stat-used">4</span>
+          <span class="text-xs text-amber-600 font-bold">/ 200 則</span>
         </div>
-        <p class="mt-1 text-2xs text-slate-400">集中防護避免超量</p>
+        <p class="mt-1 text-2xs text-slate-400">中樞集中管控，避免超額費用</p>
       </div>
 
       <div class="glass-panel p-4 sm:p-5 rounded-2xl shadow-2xs border-l-4 border-l-teal-500">
-        <p class="text-2xs sm:text-xs font-bold uppercase tracking-wider text-slate-500">LINE 閘道狀態</p>
+        <p class="text-2xs sm:text-xs font-bold uppercase tracking-wider text-slate-500">私訊安全防干擾</p>
         <div class="mt-2 flex items-center gap-2">
           <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-          <span class="text-sm sm:text-base font-bold text-slate-800">正常監聽中</span>
+          <span class="text-sm sm:text-base font-black text-emerald-700">純代碼模式</span>
         </div>
-        <p class="mt-1 text-2xs text-slate-400">Webhook 雙向解析</p>
+        <p class="mt-1 text-2xs text-slate-400">日常閒聊與請假 100% 靜音保護</p>
       </div>
     </section>
 
     <!-- ================================================================= -->
-    <!-- 系統版本更新紀錄 (Changelog) -->
+    <!-- 頂部核心三：🔑 授權專案接入金鑰專區 (統一放上端) -->
     <!-- ================================================================= -->
-    <section id="changelog" class="glass-panel rounded-2xl p-6 shadow-xs space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-200/80 pb-3">
-        <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
-          <span>📝</span> 系統版本更新紀錄 (Changelog)
+    <section class="glass-panel rounded-3xl p-6 shadow-xs border border-slate-200/80 space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/80 pb-3.5">
+        <div>
+          <h2 class="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
+            <span>🔑</span> 授權專案接入金鑰專區 (Authorized Projects)
+          </h2>
+          <p class="text-xs text-slate-500 mt-0.5">任何外部專案發送推播時，只需帶上以下 App ID 與 Secret Key 即可通過驗證發送</p>
+        </div>
+        <button onclick="copySnippet('PROJECT_SCORE', 'sec_score_demo_7182934')" class="self-start sm:self-auto text-xs font-bold px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl border border-indigo-200 transition active:scale-95 cursor-pointer">
+          📋 複製 SDK 示範代碼
+        </button>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead>
+            <tr class="bg-slate-100/80 text-slate-700 border-b border-slate-200">
+              <th class="py-3 px-3.5 font-bold">專案名稱</th>
+              <th class="py-3 px-3.5 font-bold">專案代碼 (App ID)</th>
+              <th class="py-3 px-3.5 font-bold">接入金鑰 (Secret Key)</th>
+              <th class="py-3 px-3.5 font-bold">狀態</th>
+              <th class="py-3 px-3.5 font-bold">操作</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 font-mono text-slate-700">
+            <!-- 專案 1: 作業手札 -->
+            <tr class="hover:bg-slate-50/70 transition">
+              <td class="py-3 px-3.5 font-sans font-bold text-slate-900 flex items-center gap-2">
+                <span>📚</span> 作業繳交手札 (RP_QR)
+              </td>
+              <td class="py-3 px-3.5 font-bold text-indigo-600">PROJECT_HW</td>
+              <td class="py-3 px-3.5 text-slate-500">sec_hw_demo_9823471</td>
+              <td class="py-3 px-3.5">
+                <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full text-2xs font-bold border border-emerald-300">ACTIVE</span>
+              </td>
+              <td class="py-3 px-3.5 font-sans">
+                <button onclick="copySnippet('PROJECT_HW', 'sec_hw_demo_9823471')" class="text-indigo-600 hover:text-indigo-800 font-bold hover:underline cursor-pointer">複製連線代碼</button>
+              </td>
+            </tr>
+
+            <!-- 專案 2: 平時成績 -->
+            <tr class="hover:bg-slate-50/70 transition">
+              <td class="py-3 px-3.5 font-sans font-bold text-slate-900 flex items-center gap-2">
+                <span>📊</span> 平時成績管理系統 (MPScore-Daily)
+              </td>
+              <td class="py-3 px-3.5 font-bold text-indigo-600">PROJECT_SCORE</td>
+              <td class="py-3 px-3.5 text-slate-500">sec_score_demo_7182934</td>
+              <td class="py-3 px-3.5">
+                <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full text-2xs font-bold border border-emerald-300">ACTIVE</span>
+              </td>
+              <td class="py-3 px-3.5 font-sans">
+                <button onclick="copySnippet('PROJECT_SCORE', 'sec_score_demo_7182934')" class="text-indigo-600 hover:text-indigo-800 font-bold hover:underline cursor-pointer">複製連線代碼</button>
+              </td>
+            </tr>
+
+            <!-- 專案 3: 線上聯絡簿 (示範自訂專案) -->
+            <tr class="hover:bg-slate-50/70 transition bg-indigo-50/20">
+              <td class="py-3 px-3.5 font-sans font-bold text-slate-900 flex items-center gap-2">
+                <span>📝</span> 班級線上聯絡簿 (自訂專案示範)
+              </td>
+              <td class="py-3 px-3.5 font-bold text-indigo-600">PROJECT_BOOK</td>
+              <td class="py-3 px-3.5 text-slate-500">sec_book_2026</td>
+              <td class="py-3 px-3.5">
+                <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full text-2xs font-bold border border-emerald-300">ACTIVE</span>
+              </td>
+              <td class="py-3 px-3.5 font-sans">
+                <button onclick="copySnippet('PROJECT_BOOK', 'sec_book_2026')" class="text-indigo-600 hover:text-indigo-800 font-bold hover:underline cursor-pointer">複製連線代碼</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 新增專案指引 -->
+      <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-600 space-y-1">
+        <p class="font-bold text-slate-800">💡 如何新增自訂專案？（全部自由命名）</p>
+        <p class="text-2xs text-slate-500 leading-relaxed">
+          打開中樞試算表的【授權專案名單】分頁，在最下方新增一列填入「專案名稱、App ID（英數大寫）、Secret Key（自訂通行密碼）、ACTIVE、1000、0」即可！兩邊代碼相同中樞就會自動放行。
+        </p>
+      </div>
+    </section>
+
+    <!-- ================================================================= -->
+    <!-- 頂部核心四：🤖 新專案 AI 串接一鍵提示詞 (重要資訊，方便與 AI 合作) -->
+    <!-- ================================================================= -->
+    <section class="glass-panel rounded-3xl p-6 shadow-xs border border-indigo-100 space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/80 pb-3">
+        <div>
+          <h2 class="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
+            <span>🤖</span> 新專案 AI 串接指示詞（一鍵複製給 AI 助理）
+          </h2>
+          <p class="text-xs text-slate-500 mt-0.5">未來開發任何新系統（如請假、獎懲、聯絡簿），直接把這段提示詞貼給 AI，它就會自動幫您寫好對接！</p>
+        </div>
+        <button onclick="copyAiPrompt()" id="btn-copy-ai-prompt" class="px-4 py-2 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-black text-xs rounded-xl transition flex items-center gap-1.5 shadow-md shadow-indigo-600/20 active:scale-95 cursor-pointer whitespace-nowrap">
+          <span>📋</span>
+          <span id="ai-prompt-btn-text">一鍵複製 AI 提示詞</span>
+        </button>
+      </div>
+
+      <div class="p-4 rounded-2xl bg-slate-900 text-slate-200 font-mono text-2xs sm:text-xs leading-relaxed space-y-2 select-all overflow-x-auto" id="ai-prompt-content">
+        <div class="text-emerald-400 font-bold">// 💬 請直接將以下內容複製貼給新專案的 AI 助理：</div>
+        <div>本專案需要發送 LINE 通知給家長，但【請不要自己寫 LINE Webhook、也不需要申請 LINE Token】。</div>
+        <div>我們學校已建置統一的校園推播中樞 School LINE Hub，家長均已綁定完畢。</div>
+        <br>
+        <div class="text-indigo-300">請直接透過中樞 API 發送推播訊息：</div>
+        <div>• 中樞 API 網址：https://script.google.com/macros/s/AKfycby4yrSdmztcbnmdHlGdLqqM9nBRT4vo6DwK8LmW1R-wi22qEKC_vcD-VvrDnUTp4Bm_Yg/exec</div>
+        <div>• 專案 App ID：PROJECT_BOOK（或您在試算表登記的代號）</div>
+        <div>• 專案 Secret：sec_book_2026（或您在試算表登記的密碼）</div>
+        <br>
+        <div class="text-slate-400">發送推播時，只需 POST JSON 帶入座號（例如 seatNo: "18"）、學生姓名與訊息內文（或 customMessage 全自訂文字），中樞會自動比對家長 LINE 並發送通知！</div>
+      </div>
+    </section>
+
+    <!-- ================================================================= -->
+    <!-- 頂部核心五：📱 LINE 官方帳號家長互動規範 (純代碼 ‧ 零干擾模式) -->
+    <!-- ================================================================= -->
+    <section class="glass-panel rounded-3xl p-6 shadow-xs border border-slate-200/80 space-y-4">
+      <div class="border-b border-slate-200/80 pb-3">
+        <h2 class="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
+          <span>📱</span> LINE 官方帳號互動指令規範（家長端）
         </h2>
-        <span class="text-xs text-slate-500 font-mono">持續優化維護</span>
+        <p class="text-xs text-slate-500 mt-0.5">系統嚴格實施「純代碼比對」，確保老師與家長的日常通訊 100% 不受機器人打擾</p>
       </div>
 
-      <div class="space-y-4 text-xs text-slate-700">
-        
-        <!-- v2.1.2 最新版 -->
-        <div class="p-4 rounded-xl bg-white border border-slate-200 space-y-2 shadow-2xs">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <span class="font-bold text-slate-900 text-sm">v2.1.2（繁體中文標籤與介面純化版）</span>
-              <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-2xs">最新版</span>
-            </div>
-            <span class="text-slate-400">2026-10-29</span>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- 指令 1: 學生代碼綁定 -->
+        <div class="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200 space-y-2">
+          <div class="flex items-center gap-2">
+            <span class="w-7 h-7 rounded-lg bg-emerald-600 text-white font-bold text-xs flex items-center justify-center">1</span>
+            <h3 class="text-sm font-bold text-emerald-950">學生專屬代碼綁定</h3>
           </div>
-          <ul class="list-disc list-inside space-y-1.5 text-slate-600 pl-1">
-            <li><strong>試算表分頁全面繁體中文支援：</strong>標準化為「系統設定」、「授權專案名單」、「家長綁定名冊」、「推播紀錄」，程式後端支援中英雙向自動辨識。</li>
-            <li><strong>新增一鍵轉中文工具：</strong>新增 <code>renameSheetsToChinese</code> 函式，執行即可自動將舊英文字串轉為中文標籤。</li>
-            <li><strong>網站介面純化：</strong>完全移除所有外部程式碼倉庫連結，營造純淨專屬的校園內部管理中心體驗。</li>
-          </ul>
+          <p class="text-xs text-emerald-900">
+            家長直接傳送專屬 <strong>6 碼代碼</strong>（例：<code class="bg-white px-1.5 py-0.5 rounded font-mono font-bold text-emerald-800">de865y</code>、<code class="bg-white px-1.5 py-0.5 rounded font-mono font-bold text-emerald-800">#de865y</code>），機器人即回覆綁定成功。
+          </p>
         </div>
 
-        <!-- v2.1.1 -->
-        <div class="p-4 rounded-xl bg-white border border-slate-200 space-y-2">
-          <div class="flex items-center justify-between">
-            <span class="font-bold text-slate-900 text-sm">v2.1.1（秒速穩健初始化版）</span>
-            <span class="text-slate-400">2026-10-29</span>
+        <!-- 指令 2: 查詢與解除 -->
+        <div class="p-4 rounded-2xl bg-indigo-50/60 border border-indigo-200 space-y-2">
+          <div class="flex items-center gap-2">
+            <span class="w-7 h-7 rounded-lg bg-indigo-600 text-white font-bold text-xs flex items-center justify-center">2</span>
+            <h3 class="text-sm font-bold text-indigo-950">查詢與解除綁定</h3>
           </div>
-          <ul class="list-disc list-inside space-y-1.5 text-slate-600 pl-1">
-            <li><strong>修復無窮遞迴錯誤：</strong>徹底消除 Loader 引導碼與遠端模組同名函式導致的 <code>Maximum call stack size exceeded</code> 堆疊溢位錯誤。</li>
-            <li><strong>本機秒速建立工作表：</strong>將初始化試算表結構改為本機直接生成，完全免去網路依賴，1 秒內即時長出所有工作表。</li>
-          </ul>
+          <p class="text-xs text-indigo-900">
+            • 輸入「<strong>查詢</strong>」：列出已綁定之學生。<br>
+            • 輸入「<strong>解除綁定</strong>」：立即清除綁定。
+          </p>
         </div>
 
-        <!-- v2.1.0 -->
-        <div class="p-4 rounded-xl bg-white border border-slate-200 space-y-2">
-          <div class="flex items-center justify-between">
-            <span class="font-bold text-slate-900 text-sm">v2.1.0（自動熱更新與教學中心初版）</span>
-            <span class="text-slate-400">2026-10-29</span>
+        <!-- 指令 3: 日常對話徹底靜音 -->
+        <div class="p-4 rounded-2xl bg-amber-50/60 border border-amber-200 space-y-2">
+          <div class="flex items-center gap-2">
+            <span class="w-7 h-7 rounded-lg bg-amber-600 text-white font-bold text-xs flex items-center justify-center">3</span>
+            <h3 class="text-sm font-bold text-amber-950">日常私訊 100% 靜音保護</h3>
           </div>
-          <ul class="list-disc list-inside space-y-1.5 text-slate-600 pl-1">
-            <li><strong>導入自動熱更新架構：</strong>建立動態載入機制，大幅降低後續維護成本。</li>
-            <li><strong>內建新手初次設定指南：</strong>將 4 步建置教學與舊專案家長搬遷工具直接整合於網頁。</li>
-          </ul>
+          <p class="text-xs text-amber-900">
+            家長傳送任何日常文字（如「我笑出來！！」、「今天請假」…）、照片、貼圖，<strong>機器人一律無視、絕對不插話！</strong>
+          </p>
         </div>
-
       </div>
     </section>
 
-    <!-- 初次快速設定指南 -->
-    <section id="setup-guide" class="glass-panel rounded-2xl p-6 sm:p-8 shadow-xs border border-indigo-100 space-y-6">
+    <!-- ================================================================= -->
+    <!-- 頂部核心六：🗂️ 試算表 4 大繁體中文分頁結構說明 (防呆指南) -->
+    <!-- ================================================================= -->
+    <section class="glass-panel rounded-3xl p-6 shadow-xs border border-slate-200/80 space-y-4">
+      <div class="border-b border-slate-200/80 pb-3">
+        <h2 class="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
+          <span>🗂️</span> 中樞 Google 試算表 4 大分頁權責配置
+        </h2>
+        <p class="text-xs text-slate-500 mt-0.5">全系統資料透明集中，免去跨表查閱困擾</p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+        <div class="p-4 rounded-2xl bg-white border border-slate-200 space-y-1.5 shadow-2xs">
+          <div class="font-bold text-slate-900 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-slate-800"></span>
+            <span>系統設定</span>
+          </div>
+          <p class="text-slate-600 leading-relaxed text-2xs">
+            A1 儲存 LINE 官方帳號的 <strong>Channel Access Token</strong>。後端自動支援純字串或 JSON 格式讀取。
+          </p>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-white border border-slate-200 space-y-1.5 shadow-2xs">
+          <div class="font-bold text-slate-900 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-indigo-600"></span>
+            <span>授權專案名單</span>
+          </div>
+          <p class="text-slate-600 leading-relaxed text-2xs">
+            管理各子專案之 <strong>App ID、Secret Key、狀態與配額</strong>。只有名單內的專案才能調用推播 API。
+          </p>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-white border border-slate-200 space-y-1.5 shadow-2xs">
+          <div class="font-bold text-slate-900 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+            <span>家長綁定名冊</span>
+          </div>
+          <p class="text-slate-600 leading-relaxed text-2xs">
+            儲存學生座號、學號、姓名、<strong>查詢代碼與 LINE_UID</strong>。家長綁定後自動回寫，全專案共用。
+          </p>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-white border border-slate-200 space-y-1.5 shadow-2xs">
+          <div class="font-bold text-slate-900 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-teal-600"></span>
+            <span>推播紀錄</span>
+          </div>
+          <p class="text-slate-600 leading-relaxed text-2xs">
+            每次發送推播之<strong>時間戳、來源專案、目標學生、接收者 UID 與 SUCCESS/FAILED 結果日誌</strong>。
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================= -->
+    <!-- 下方區塊：初次快速建置指南 (若已建置完成可供參考) -->
+    <!-- ================================================================= -->
+    <section id="setup-guide" class="glass-panel rounded-3xl p-6 sm:p-8 shadow-xs border border-slate-200/80 space-y-6">
       <div class="border-b border-slate-200/80 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
-          <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
-            <span>🚀</span> 初次快速設定指南（5 分鐘一次搞定）
+          <h2 class="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
+            <span>🚀</span> 初次建置回顧與引導程式碼 (Loader.gs)
           </h2>
-          <p class="text-xs text-slate-500 mt-0.5">依照以下 4 個步驟完成中樞建置，日後永遠不需要再手動改版更新！</p>
+          <p class="text-xs text-slate-500 mt-0.5">若日後需要建立新學期、新班級中樞，可依此 4 步流程快速複製建置</p>
         </div>
-        <span class="self-start sm:self-auto px-3 py-1 bg-indigo-100 text-indigo-800 font-bold text-xs rounded-full">
-          終生免重複貼 Code
+        <span class="self-start sm:self-auto px-3 py-1 bg-slate-100 text-slate-700 font-bold text-xs rounded-full">
+          秒速初始結構
         </span>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-        <div class="p-5 rounded-xl bg-white border border-slate-200 space-y-3">
-          <div class="flex items-center gap-2.5">
-            <span class="w-6 h-6 rounded-full bg-indigo-600 text-white font-bold text-xs flex items-center justify-center">1</span>
-            <h3 class="text-sm font-bold text-slate-800">建立全新的中樞 Google 試算表</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+        <div class="p-4 rounded-2xl bg-white border border-slate-200 space-y-1.5">
+          <div class="font-bold text-slate-800 flex items-center gap-2">
+            <span class="w-5 h-5 rounded-full bg-slate-800 text-white font-bold text-2xs flex items-center justify-center">1</span>
+            <span>建立全新 Google 試算表</span>
           </div>
-          <p class="text-xs text-slate-600 leading-relaxed">
-            前往 Google 雲端硬碟，建立一份全新 Google 試算表（命名為 <code>【中樞】校園LINE推播管理總庫</code>）。點選上方選單的 <strong>「擴充功能」 ➔ 「Apps Script」</strong>。
-          </p>
+          <p class="text-slate-600 text-2xs leading-relaxed">命名為 <code>School LINE Hub</code>，點選上方「擴充功能」➔「Apps Script」。</p>
         </div>
 
-        <div class="p-5 rounded-xl bg-white border border-slate-200 space-y-3">
-          <div class="flex items-center gap-2.5">
-            <span class="w-6 h-6 rounded-full bg-indigo-600 text-white font-bold text-xs flex items-center justify-center">2</span>
-            <h3 class="text-sm font-bold text-slate-800">貼入「穩健引導碼」並執行初始化</h3>
+        <div class="p-4 rounded-2xl bg-white border border-slate-200 space-y-1.5">
+          <div class="font-bold text-slate-800 flex items-center gap-2">
+            <span class="w-5 h-5 rounded-full bg-slate-800 text-white font-bold text-2xs flex items-center justify-center">2</span>
+            <span>貼入 Loader.gs 執行 initSpreadsheetStructure</span>
           </div>
-          <p class="text-xs text-slate-600 leading-relaxed">
-            將下方 <strong>穩健秒速版引導碼 (Loader.gs)</strong> 貼入 Apps Script。函式選取 <code>initSpreadsheetStructure</code> 並按執行，<strong>1 秒內自動長出 4 個繁體中文分頁</strong>！
-          </p>
+          <p class="text-slate-600 text-2xs leading-relaxed">本機秒速長出「系統設定、授權專案名單、家長綁定名冊、推播紀錄」4 個繁中分頁。</p>
         </div>
 
-        <div class="p-5 rounded-xl bg-white border border-slate-200 space-y-3">
-          <div class="flex items-center gap-2.5">
-            <span class="w-6 h-6 rounded-full bg-indigo-600 text-white font-bold text-xs flex items-center justify-center">3</span>
-            <h3 class="text-sm font-bold text-slate-800">發布為網頁應用程式 (Web App)</h3>
+        <div class="p-4 rounded-2xl bg-white border border-slate-200 space-y-1.5">
+          <div class="font-bold text-slate-800 flex items-center gap-2">
+            <span class="w-5 h-5 rounded-full bg-slate-800 text-white font-bold text-2xs flex items-center justify-center">3</span>
+            <span>發布為網頁應用程式 (Web App)</span>
           </div>
-          <p class="text-xs text-slate-600 leading-relaxed">
-            在 Apps Script 右上角點選 <strong>「部署」 ➔ 「新增部署作業」 ➔ 「網頁應用程式」</strong>：
-            <br>• <strong>執行身分</strong>：我（您的 Google 帳號）
-            <br>• <strong>誰可以存取</strong>：所有人 (Anyone)
-            <br>部署後複製產生的 <code>https://script.google.com/macros/s/.../exec</code> 網址！
-          </p>
+          <p class="text-slate-600 text-2xs leading-relaxed">點右上角「部署」➔ 執行身分選「我」➔ 誰可以存取選「所有人 (Anyone)」。</p>
         </div>
 
-        <div class="p-5 rounded-xl bg-white border border-slate-200 space-y-3">
-          <div class="flex items-center gap-2.5">
-            <span class="w-6 h-6 rounded-full bg-indigo-600 text-white font-bold text-xs flex items-center justify-center">4</span>
-            <h3 class="text-sm font-bold text-slate-800">綁定 LINE Developers 後台</h3>
+        <div class="p-4 rounded-2xl bg-white border border-slate-200 space-y-1.5">
+          <div class="font-bold text-slate-800 flex items-center gap-2">
+            <span class="w-5 h-5 rounded-full bg-slate-800 text-white font-bold text-2xs flex items-center justify-center">4</span>
+            <span>設定 LINE Developers Webhook</span>
           </div>
-          <p class="text-xs text-slate-600 leading-relaxed">
-            1. 將剛才複製的 Web App 網址貼至 LINE 後台的 <strong>Webhook URL</strong> 並開啟開關。<br>
-            2. 複製 LINE 的 <strong>Channel access token</strong>，貼入試算表 <code>系統設定</code> 分頁的 A1 格內。
-          </p>
+          <p class="text-slate-600 text-2xs leading-relaxed">將 Web App 網址貼入 Webhook URL，並將 Channel Token 貼入試算表 A1 格即完成！</p>
         </div>
-
       </div>
 
-      <!-- 引導程式碼展示與一鍵複製區 -->
-      <div id="loader-code-section" class="mt-6 rounded-2xl code-box p-5 text-white space-y-3">
+      <!-- 關鍵防呆與維護心法 -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+        <div class="p-4 rounded-2xl bg-amber-50/70 border border-amber-200 space-y-1.5">
+          <div class="flex items-center gap-2 text-amber-900 font-bold text-xs">
+            <span>💡</span>
+            <span>關鍵心法一：更新後端時「如何永遠保持同一個網址」？</span>
+          </div>
+          <p class="text-amber-800 text-2xs leading-relaxed">
+            修改後端程式碼後，<strong>請勿點「新增部署作業」</strong>（那會產生全新隨機網址）。<br>
+            正確步驟：點選「<strong>管理部署作業</strong>」➔ 點右側「<strong>鉛筆（編輯）</strong>」➔ 版本選擇「<strong>新版本</strong>」➔ 點「<strong>部署</strong>」。這樣網址永久固定，子專案與 LINE Webhook 完全不用重設！
+          </p>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-200 space-y-1.5">
+          <div class="flex items-center gap-2 text-indigo-900 font-bold text-xs">
+            <span>🛡️</span>
+            <span>關鍵心法二：如何關閉 LINE 官方預設機器人干擾？</span>
+          </div>
+          <p class="text-indigo-800 text-2xs leading-relaxed">
+            進入 LINE Official Account Manager ➔ 右上角「設定」➔「回應設定」：<br>
+            1. 回應模式請選擇「<strong>聊天</strong>」。<br>
+            2.「<strong>自動回應訊息</strong>」請設為「<strong>關閉（停用）</strong>」，避免官方預設罐頭訊息干擾日常私訊！
+          </p>
+        </div>
+      </div>
+
+      <!-- 引導程式碼展示區 -->
+      <div id="loader-code-section" class="rounded-2xl code-box p-5 text-white space-y-3">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
-            <span class="text-emerald-400 font-mono text-xs font-bold">📄 Loader.gs（穩健繁中秒速版）</span>
+            <span class="text-emerald-400 font-mono text-xs font-bold">📄 Loader.gs（繁中動態引導核心）</span>
             <span class="text-2xs bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/30">
-              貼一次終生自動更新
+              免手動維護
             </span>
           </div>
-          <button onclick="copyLoaderCode()" id="copy-btn" class="px-3.5 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs rounded-lg transition-all flex items-center gap-1.5 shadow-sm">
-            📋 一鍵複製程式碼
+          <button onclick="copyLoaderCode()" id="copy-btn" class="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl transition flex items-center gap-1.5 cursor-pointer">
+            📋 一鍵複製引導碼
           </button>
         </div>
 
-        <pre class="font-mono text-2xs sm:text-xs text-slate-300 overflow-x-auto leading-relaxed p-3 bg-slate-950/60 rounded-xl max-h-80"><code id="loader-code-text">/**
+        <pre class="font-mono text-2xs text-slate-300 overflow-x-auto leading-relaxed p-3 bg-slate-950/70 rounded-xl max-h-60"><code id="loader-code-text">/**
  * School LINE Hub - 穩健秒速版 (Loader.gs)
  */
 var GITHUB_CORE_URL = "https://raw.githubusercontent.com/chy23/School-LINE_Hub-/main/gas/Core.js";
@@ -247,31 +474,11 @@ var CACHE_EXPIRATION_SEC = 300;
 function doGet(e) { return executeRemoteCore("doGet", [e]); }
 function doPost(e) { return executeRemoteCore("doPost", [e]); }
 
-/**
- * ⚡ 一鍵轉繁體中文標籤
- */
-function renameSheetsToChinese() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var map = {
-    'SystemConfig': '系統設定',
-    'AuthorizedProjects': '授權專案名單',
-    'ParentBindings': '家長綁定名冊',
-    'PushLogs': '推播紀錄'
-  };
-  for (var oldName in map) {
-    var sheet = ss.getSheetByName(oldName);
-    if (sheet) sheet.setName(map[oldName]);
-  }
-}
-
-/**
- * ⚡ 秒速建立 4 個繁體中文分頁
- */
 function initSpreadsheetStructure() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
 
   // 1. 系統設定
-  var cfg = ss.getSheetByName('系統設定') || ss.getSheetByName('SystemConfig') || ss.insertSheet('系統設定');
+  var cfg = ss.getSheetByName('系統設定') || ss.insertSheet('系統設定');
   if (cfg.getLastRow() === 0) {
     cfg.getRange("A1").setValue(JSON.stringify({
       lineChannelAccessToken: "請在此貼上LINE_CHANNEL_ACCESS_TOKEN",
@@ -280,23 +487,24 @@ function initSpreadsheetStructure() {
   }
 
   // 2. 授權專案名單
-  var proj = ss.getSheetByName('授權專案名單') || ss.getSheetByName('AuthorizedProjects') || ss.insertSheet('授權專案名單');
+  var proj = ss.getSheetByName('授權專案名單') || ss.insertSheet('授權專案名單');
   if (proj.getLastRow() === 0) {
     proj.appendRow(['專案名稱', 'App_ID', 'Secret_Key', '狀態', '每月配額', '本月已用則數']);
     proj.getRange(1, 1, 1, 6).setBackground('#1e293b').setFontColor('#ffffff').setFontWeight('bold');
     proj.appendRow(['作業繳交手札系統', 'PROJECT_HW', 'sec_hw_demo_9823471', 'ACTIVE', 1000, 0]);
     proj.appendRow(['平時成績管理系統', 'PROJECT_SCORE', 'sec_score_demo_7182934', 'ACTIVE', 1000, 0]);
+    proj.appendRow(['班級線上聯絡簿', 'PROJECT_BOOK', 'sec_book_2026', 'ACTIVE', 1000, 0]);
   }
 
   // 3. 家長綁定名冊
-  var bind = ss.getSheetByName('家長綁定名冊') || ss.getSheetByName('ParentBindings') || ss.insertSheet('家長綁定名冊');
+  var bind = ss.getSheetByName('家長綁定名冊') || ss.insertSheet('家長綁定名冊');
   if (bind.getLastRow() === 0) {
     bind.appendRow(['座號', '學號', '學生姓名', '查詢代碼', 'LINE_UID', '綁定時間', '狀態']);
     bind.getRange(1, 1, 1, 7).setBackground('#0f766e').setFontColor('#ffffff').setFontWeight('bold');
   }
 
   // 4. 推播紀錄
-  var log = ss.getSheetByName('推播紀錄') || ss.getSheetByName('PushLogs') || ss.insertSheet('推播紀錄');
+  var log = ss.getSheetByName('推播紀錄') || ss.insertSheet('推播紀錄');
   if (log.getLastRow() === 0) {
     log.appendRow(['時間戳', '來源 App_ID', '學生座號', 'LINE_UID', '訊息內容', '狀態']);
     log.getRange(1, 1, 1, 6).setBackground('#334155').setFontColor('#ffffff').setFontWeight('bold');
@@ -324,100 +532,242 @@ function executeRemoteCore(fnName, args) {
   return ContentService.createTextOutput("School LINE Hub 核心載入中...");
 }</code></pre>
       </div>
-
-    </section>
-
-    <!-- 既有家長名單一鍵遷移工具 -->
-    <section class="glass-panel rounded-2xl p-6 shadow-xs space-y-4">
-      <div>
-        <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
-          <span>📦</span> 舊專案家長綁定資料無痛搬家（免重新綁定！）
-        </h2>
-        <p class="text-xs text-slate-500 mt-0.5">您可以把作業手札系統已綁定的家長名單直接複製貼上，或由下方輸入試算表網址自動同步：</p>
-      </div>
-
-      <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/80 space-y-3">
-        <label class="block text-xs font-bold text-slate-700">來源舊專案試算表網址 (Google Sheet URL)</label>
-        <div class="flex flex-col sm:flex-row gap-2">
-          <input type="text" id="legacy-url-input" placeholder="https://docs.google.com/spreadsheets/d/您的舊作業試算表ID/edit" class="flex-1 px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
-          <button onclick="alert('提示：您也可以直接打開舊試算表的「LINE用戶綁定」分頁，將座號、姓名、代碼、LINE UID 整欄複製，貼到新試算表的「家長綁定名冊」分頁即可！')" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-lg transition-all whitespace-nowrap">
-            自動同步匯入
-          </button>
-        </div>
-        <p class="text-2xs text-slate-400">💡 欄位自動相容：座號、學生姓名、查詢代碼、LINE User ID</p>
-      </div>
-    </section>
-
-    <!-- 授權專案接入金鑰專區 -->
-    <section class="glass-panel rounded-2xl p-6 shadow-xs space-y-4">
-      <div>
-        <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
-          <span>🔑</span> 授權專案接入金鑰專區
-        </h2>
-        <p class="text-xs text-slate-500 mt-0.5">其他專案只要在後台設定填入以下代碼，即可連線推播</p>
-      </div>
-
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-xs">
-          <thead>
-            <tr class="bg-slate-100/70 text-slate-600 border-b border-slate-200">
-              <th class="py-2.5 px-3 font-semibold">專案名稱</th>
-              <th class="py-2.5 px-3 font-semibold">專案代碼 (App ID)</th>
-              <th class="py-2.5 px-3 font-semibold">接入金鑰 (Secret Key)</th>
-              <th class="py-2.5 px-3 font-semibold">狀態</th>
-              <th class="py-2.5 px-3 font-semibold">接入方式</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100 font-mono text-slate-700">
-            <tr class="hover:bg-slate-50/50">
-              <td class="py-3 px-3 font-sans font-medium text-slate-900">作業繳交手札 (RP_QR)</td>
-              <td class="py-3 px-3 text-indigo-600 font-bold">PROJECT_HW</td>
-              <td class="py-3 px-3 text-slate-500">sec_hw_demo_9823471</td>
-              <td class="py-3 px-3"><span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-2xs font-bold">ACTIVE</span></td>
-              <td class="py-3 px-3 font-sans">
-                <button onclick="copySnippet('PROJECT_HW', 'sec_hw_demo_9823471')" class="text-indigo-600 hover:text-indigo-800 font-bold">複製連線代碼</button>
-              </td>
-            </tr>
-            <tr class="hover:bg-slate-50/50">
-              <td class="py-3 px-3 font-sans font-medium text-slate-900">平時成績系統 (MPScore)</td>
-              <td class="py-3 px-3 text-indigo-600 font-bold">PROJECT_SCORE</td>
-              <td class="py-3 px-3 text-slate-500">sec_score_demo_7182934</td>
-              <td class="py-3 px-3"><span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-2xs font-bold">ACTIVE</span></td>
-              <td class="py-3 px-3 font-sans">
-                <button onclick="copySnippet('PROJECT_SCORE', 'sec_score_demo_7182934')" class="text-indigo-600 hover:text-indigo-800 font-bold">複製連線代碼</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
     </section>
 
   </main>
 
-  <footer class="text-center py-6 text-xs text-slate-400">
-    School LINE Hub © 2026 • 校園智慧推播中樞
+  <!-- 頁尾 -->
+  <footer class="max-w-6xl mx-auto px-6 py-8 border-t border-slate-200/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
+    <div class="flex items-center gap-2">
+      <span class="font-black text-slate-800">School LINE Hub</span>
+      <span>• 校園官方帳號智慧推播管理中樞</span>
+    </div>
+    <div class="flex items-center gap-3">
+      <button onclick="openChangelogModal()" class="text-indigo-600 hover:text-indigo-800 font-bold hover:underline cursor-pointer">
+        查看版本更新紀錄 (v2.2.3)
+      </button>
+      <span class="text-slate-300">|</span>
+      <span>純淨內部版本 ‧ 免跨表無痛推播</span>
+    </div>
   </footer>
 
+  <!-- ================================================================= -->
+  <!-- 彈出視窗：系統版本更新紀錄 (收到角落，點擊才開啟) -->
+  <!-- ================================================================= -->
+  <div id="changelogModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm transition-all" onclick="handleModalBackdropClick(event)">
+    <div class="bg-white rounded-3xl max-w-2xl w-full max-h-[85vh] shadow-2xl border border-slate-200 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150" onclick="event.stopPropagation()">
+      
+      <!-- 視窗標題 -->
+      <div class="px-6 py-4.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
+        <div class="flex items-center gap-2.5">
+          <span class="text-xl">📝</span>
+          <div>
+            <h3 class="text-sm sm:text-base font-black text-slate-900">系統版本更新紀錄 (Changelog)</h3>
+            <p class="text-2xs text-slate-500">School LINE Hub 持續優化與功能進化日誌</p>
+          </div>
+        </div>
+        <button onclick="closeChangelogModal()" class="w-8 h-8 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-600 font-bold text-sm flex items-center justify-center transition cursor-pointer">
+          ✕
+        </button>
+      </div>
+
+      <!-- 視窗內容 (可滾動) -->
+      <div class="p-6 overflow-y-auto space-y-4 text-xs text-slate-700">
+
+        <!-- v2.2.3 最新版 -->
+        <div class="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200 space-y-2">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-slate-900 text-sm">v2.2.3（純代碼防干擾與介面極簡版）</span>
+              <span class="px-2 py-0.5 rounded-full bg-emerald-500 text-white font-bold text-2xs">最新版</span>
+            </div>
+            <span class="text-slate-500 font-mono text-2xs">2026-10-29</span>
+          </div>
+          <ul class="list-disc list-inside space-y-1 text-slate-700 pl-1 text-2xs sm:text-xs">
+            <li><strong>日常私訊 100% 徹底靜音保護：</strong>移除未比對到代碼的提示回覆，家長日常閒聊（如「我笑出來！！」、請假私訊、照片）機器人一律無視、絕不插嘴。</li>
+            <li><strong>嚴格查詢代碼觸發：</strong>僅在傳送專屬 6 碼查詢代碼（例：<code>de865y</code>）或「<code>查詢</code>」指令時才介入回應。</li>
+            <li><strong>首頁介面重構：</strong>將更新紀錄收納至角落彈窗，置頂重要正式 Web App 網址、授權金鑰專區與 AI 串接提示詞。</li>
+          </ul>
+        </div>
+
+        <!-- v2.2.0 -->
+        <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-slate-900 text-sm">v2.2.0（中樞推播與智慧診斷強化版）</span>
+            <span class="text-slate-400 font-mono text-2xs">2026-10-29</span>
+          </div>
+          <ul class="list-disc list-inside space-y-1 text-slate-600 pl-1 text-2xs sm:text-xs">
+            <li><strong>內建一鍵診斷函式：</strong>加入 <code>testPushSeat18</code> 與 <code>debugCheckAll</code>，可在 Apps Script 直接測試推播至真實手機。</li>
+            <li><strong>詳細略過原因回傳：</strong>推播跳過未綁定學生時回報清楚原因，不再僅提示「中樞處理完成」。</li>
+          </ul>
+        </div>
+
+        <!-- v2.1.2 -->
+        <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-slate-900 text-sm">v2.1.2（繁體中文標籤與介面純化版）</span>
+            <span class="text-slate-400 font-mono text-2xs">2026-10-29</span>
+          </div>
+          <ul class="list-disc list-inside space-y-1 text-slate-600 pl-1 text-2xs sm:text-xs">
+            <li><strong>試算表分頁全面繁體中文支援：</strong>標準化為「系統設定」、「授權專案名單」、「家長綁定名冊」、「推播紀錄」。</li>
+            <li><strong>網站介面純化：</strong>完全移除所有外部程式碼倉庫連結，營造純淨專屬的校園內部管理中心體驗。</li>
+          </ul>
+        </div>
+
+        <!-- v2.1.1 -->
+        <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-slate-900 text-sm">v2.1.1（秒速穩健初始化版）</span>
+            <span class="text-slate-400 font-mono text-2xs">2026-10-29</span>
+          </div>
+          <ul class="list-disc list-inside space-y-1 text-slate-600 pl-1 text-2xs sm:text-xs">
+            <li><strong>修復無窮遞迴錯誤：</strong>徹底消除 Loader 同名函式導致的 <code>Maximum call stack size exceeded</code> 堆疊溢位錯誤。</li>
+            <li><strong>本機秒速建立工作表：</strong>結構初始化改為本機直接生成，1 秒內即時長出所有工作表。</li>
+          </ul>
+        </div>
+
+      </div>
+
+      <!-- 視窗底部按鈕 -->
+      <div class="px-6 py-3.5 border-t border-slate-100 bg-slate-50/70 flex justify-end">
+        <button onclick="closeChangelogModal()" class="px-5 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl transition cursor-pointer">
+          關閉
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- JavaScript 交互腳本 -->
   <script>
+    const ACTIVE_HUB_URL = "https://script.google.com/macros/s/AKfycby4yrSdmztcbnmdHlGdLqqM9nBRT4vo6DwK8LmW1R-wi22qEKC_vcD-VvrDnUTp4Bm_Yg/exec";
+
+    // 1. 複製活躍中樞網址
+    function copyActiveHubUrl() {
+      navigator.clipboard.writeText(ACTIVE_HUB_URL).then(() => {
+        const btn = document.getElementById('btn-copy-url');
+        const orig = btn.innerHTML;
+        btn.innerHTML = '<span>✅</span><span>已複製正式網址！</span>';
+        btn.classList.remove('bg-indigo-600');
+        btn.classList.add('bg-emerald-600');
+        setTimeout(() => {
+          btn.innerHTML = orig;
+          btn.classList.remove('bg-emerald-600');
+          btn.classList.add('bg-indigo-600');
+        }, 2200);
+      });
+    }
+
+    // 2. 即時檢測中樞連線 (Ping Health Check)
+    async function pingHubHealth() {
+      const btn = document.getElementById('btn-ping');
+      const icon = document.getElementById('ping-icon');
+      const text = document.getElementById('ping-text');
+      const box = document.getElementById('ping-result-box');
+      const details = document.getElementById('ping-details-text');
+      const statBindings = document.getElementById('stat-bindings');
+
+      icon.innerText = '⏳';
+      text.innerText = '正在檢測中樞...';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch(`${ACTIVE_HUB_URL}?action=ping&t=${Date.now()}`);
+        const data = await res.json();
+        
+        box.classList.remove('hidden');
+        if (data.status === 'ok') {
+          icon.innerText = '✅';
+          text.innerText = '中樞連線正常！';
+          btn.className = btn.className.replace('bg-emerald-500', 'bg-emerald-400');
+          details.innerHTML = `服務狀態：<strong>${data.service}</strong> ‧ 目前全校/班級已綁定：<strong class="text-emerald-300">${data.activeBindings || 0}</strong> 位家庭 ‧ 伺服器時間：${data.time || new Date().toLocaleTimeString()}`;
+          if (statBindings && data.activeBindings !== undefined) {
+            statBindings.innerText = data.activeBindings;
+          }
+        } else {
+          icon.innerText = '⚠️';
+          text.innerText = '中樞回應異常';
+          details.innerText = JSON.stringify(data);
+        }
+      } catch (err) {
+        box.classList.remove('hidden');
+        icon.innerText = '⚠️';
+        text.innerText = '連線檢測失敗';
+        details.innerText = `錯誤原因：${err.message || '無法連線至 Google 伺服器'}`;
+      } finally {
+        setTimeout(() => {
+          icon.innerText = '📶';
+          text.innerText = '即時檢測中樞連線';
+          btn.disabled = false;
+        }, 4000);
+      }
+    }
+
+    // 3. 一鍵複製新專案 AI 提示詞
+    function copyAiPrompt() {
+      const promptEl = document.getElementById('ai-prompt-content');
+      const textToCopy = promptEl.innerText;
+      navigator.clipboard.writeText(textToCopy).then(() => {
+        const btnText = document.getElementById('ai-prompt-btn-text');
+        const orig = btnText.innerText;
+        btnText.innerText = '✅ 已複製 AI 提示詞！';
+        setTimeout(() => {
+          btnText.innerText = orig;
+        }, 2500);
+      });
+    }
+
+    // 4. 一鍵複製 Loader 程式碼
     function copyLoaderCode() {
       const code = document.getElementById('loader-code-text').innerText;
       navigator.clipboard.writeText(code).then(() => {
         const btn = document.getElementById('copy-btn');
-        btn.innerText = '✅ 已複製到剪貼簿！';
+        btn.innerText = '✅ 已複製引導碼！';
         btn.classList.add('bg-emerald-400');
         setTimeout(() => {
-          btn.innerText = '📋 一鍵複製程式碼';
+          btn.innerText = '📋 一鍵複製引導碼';
           btn.classList.remove('bg-emerald-400');
         }, 2500);
       });
     }
 
+    // 5. 複製 SDK 示範代碼
     function copySnippet(appId, secret) {
-      const code = `var hub = new LineHubClient({\n  hubUrl: "請填入您的中樞Web App網址",\n  appId: "${appId}",\n  appSecret: "${secret}"\n});`;
+      const code = `var hub = new LineHubClient({\n  hubUrl: "${ACTIVE_HUB_URL}",\n  appId: "${appId}",\n  appSecret: "${secret}"\n});\n\n// 範例：發送推播給 18 號\nhub.sendPushNotification({\n  seatNo: "18",\n  studentName: "學生姓名",\n  title: "【校園重要通知】",\n  body: "訊息內容說明",\n  url: "https://..."\n});`;
       navigator.clipboard.writeText(code).then(() => {
-        alert('已複製 ' + appId + ' 連線設定碼！');
+        alert('已複製 ' + appId + ' 專案連線與發送示範代碼！');
       });
     }
+
+    // 6. 更新紀錄 Modal 開關控制
+    function openChangelogModal() {
+      const modal = document.getElementById('changelogModal');
+      if (modal) {
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+      }
+    }
+
+    function closeChangelogModal() {
+      const modal = document.getElementById('changelogModal');
+      if (modal) {
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+      }
+    }
+
+    function handleModalBackdropClick(e) {
+      if (e.target.id === 'changelogModal') {
+        closeChangelogModal();
+      }
+    }
+
+    // 按 ESC 鍵關閉 Modal
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        closeChangelogModal();
+      }
+    });
   </script>
 </body>
 </html>
