@@ -4,6 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>School LINE Hub - 校園官方帳號推播管理中心</title>
+  
+  <!-- 專屬高識別度 Favicon 體系 (告別預設灰色地球) -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIiB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIj4KICA8ZGVmcz4KICAgIDwhLS0gQmFja2dyb3VuZCBHcmFkaWVudDogTElORSBHcmVlbiB0byBTY2hvb2wgRW1lcmFsZCAtLT4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iaHViQmciIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMDZDNzU1Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iNDAlIiBzdG9wLWNvbG9yPSIjMTBCOTgxIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzA0Nzg1NyIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KCiAgICA8IS0tIEdsYXNzIFRvcCBDdXJ2YXR1cmUgSGlnaGxpZ2h0IC0tPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJnbGFzc1RvcCIgeDE9IjAlIiB5MT0iMCUiIHgyPSIwJSIgeTI9IjEwMCUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjZmZmZmZmIiBzdG9wLW9wYWNpdHk9IjAuMzUiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjZmZmZmZmIiBzdG9wLW9wYWNpdHk9IjAiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CgogICAgPCEtLSBHb2xkZW4gQWNjZW50IEdyYWRpZW50IC0tPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJnb2xkR3JhZCIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiNGREUwNDciLz4KICAgICAgPHN0b3Agb2Zmc2V0PSI1MCUiIHN0b3AtY29sb3I9IiNGNTlFMEIiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjRDk3NzA2Ii8+CiAgICA8L2xpbmVhckdyYWRpZW50PgoKICAgIDwhLS0gU29mdCBEZXB0aCBTaGFkb3cgLS0+CiAgICA8ZmlsdGVyIGlkPSJzaGFkb3ciIHg9Ii0yMCUiIHk9Ii0yMCUiIHdpZHRoPSIxNDAlIiBoZWlnaHQ9IjE0MCUiPgogICAgICA8ZmVEcm9wU2hhZG93IGR4PSIwIiBkeT0iMTAiIHN0ZERldmlhdGlvbj0iMTIiIGZsb29kLWNvbG9yPSIjMDY0ZTNiIiBmbG9vZC1vcGFjaXR5PSIwLjQ1Ii8+CiAgICA8L2ZpbHRlcj4KICA8L2RlZnM+CgogIDwhLS0gQXBwbGUgU3F1aXJjbGUgT3V0ZXIgQ29udGFpbmVyIC0tPgogIDxyZWN0IHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiByeD0iMTE1IiBmaWxsPSJ1cmwoI2h1YkJnKSIvPgogIDxyZWN0IHdpZHRoPSI1MTIiIGhlaWdodD0iMjYwIiByeD0iMTE1IiBmaWxsPSJ1cmwoI2dsYXNzVG9wKSIvPgogIDxyZWN0IHg9IjIiIHk9IjIiIHdpZHRoPSI1MDgiIGhlaWdodD0iNTA4IiByeD0iMTEzIiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iNCIgc3Ryb2tlLW9wYWNpdHk9IjAuMyIvPgoKICA8IS0tIE1haW4gQ2VudHJhbCBNb3RpZjogUHVyZSBXaGl0ZSBDcmlzcCBTcGVlY2ggQnViYmxlIC0tPgogIDxnIGZpbHRlcj0idXJsKCNzaGFkb3cpIj4KICAgIDwhLS0gU3BlZWNoIGJ1YmJsZSBib2R5ICsgdGFpbCAtLT4KICAgIDxwYXRoIGQ9Ik0gMTIwIDEwMCAKICAgICAgICAgICAgIEwgMzkyIDEwMCAKICAgICAgICAgICAgIEEgNjQgNjQgMCAwIDEgNDU2IDE2NCAKICAgICAgICAgICAgIEwgNDU2IDMxNiAKICAgICAgICAgICAgIEEgNjQgNjQgMCAwIDEgMzkyIDM4MCAKICAgICAgICAgICAgIEwgMjEwIDM4MCAKICAgICAgICAgICAgIEwgMTI0IDQzNiAKICAgICAgICAgICAgIEEgMTIgMTIgMCAwIDEgMTA0IDQyNiAKICAgICAgICAgICAgIEwgMTA2IDM4MCAKICAgICAgICAgICAgIEEgNjQgNjQgMCAwIDEgNTYgMzE2IAogICAgICAgICAgICAgTCA1NiAxNjQgCiAgICAgICAgICAgICBBIDY0IDY0IDAgMCAxIDEyMCAxMDAgWiIgCiAgICAgICAgICBmaWxsPSIjRkZGRkZGIiAvPgoKICAgIDwhLS0gSW5zaWRlIENvbnRlbnQ6IEVkdWNhdGlvbmFsIEdyYWR1YXRpb24gQ2FwIChTY2hvb2wpICsgSHViIEJyb2FkY2FzdGluZyBQdWxzZSAtLT4KICAgIDwhLS0gU2Nob29sIE1vcnRhcmJvYXJkIENhcCAoRGVlcCBTbGF0ZSAvIE5hdnkpIC0tPgogICAgPGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCwgLTYpIj4KICAgICAgPCEtLSBDYXAgQmFzZSBTa3VsbGNhcCAtLT4KICAgICAgPHBhdGggZD0iTSAyMDQgMjUwIFEgMjU2IDI3OCwgMzA4IDI1MCBMIDMwOCAyNjggUSAyNTYgMjk2LCAyMDQgMjY4IFoiIGZpbGw9IiMxRTI5M0IiLz4KCiAgICAgIDwhLS0gRGlhbW9uZCBCb2FyZCAtLT4KICAgICAgPHBvbHlnb24gcG9pbnRzPSIyNTYsMTcwIDM2NiwyMTIgMjU2LDI1NCAxNDYsMjEyIiBmaWxsPSIjMEYxNzJBIi8+CiAgICAgIDxwb2x5Z29uIHBvaW50cz0iMjU2LDE3OCAzNTAsMjEyIDI1NiwyNDYgMTYyLDIxMiIgZmlsbD0iIzFFMjkzQiIvPgoKICAgICAgPCEtLSBDZW50ZXIgR29sZCBCdXR0b24gLS0+CiAgICAgIDxjaXJjbGUgY3g9IjI1NiIgY3k9IjIxMiIgcj0iOCIgZmlsbD0idXJsKCNnb2xkR3JhZCkiLz4KCiAgICAgIDwhLS0gR29sZGVuIFRhc3NlbCBoYW5naW5nIHJpZ2h0IC0tPgogICAgICA8cGF0aCBkPSJNIDI1NiAyMTIgUSAzMTIgMjE4LCAzMzIgMjUyIiBmaWxsPSJub25lIiBzdHJva2U9IiNGNTlFMEIiIHN0cm9rZS13aWR0aD0iNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgICAgIDxwb2x5Z29uIHBvaW50cz0iMzI4LDI1MCAzMzgsMjgwIDMyNCwyODAiIGZpbGw9InVybCgjZ29sZEdyYWQpIi8+CiAgICA8L2c+CgogICAgPCEtLSBIdWIgQnJvYWRjYXN0aW5nIFB1bHNlIFJpbmdzIChCcm9hZGNhc3Rpbmcgbm90aWZpY2F0aW9ucyB0byBwYXJlbnRzKSAtLT4KICAgIDxnIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzA1OTY2OSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIj4KICAgICAgPCEtLSBXYXZlIDEgKElubmVyIExlZnQgJiBSaWdodCkgLS0+CiAgICAgIDxwYXRoIGQ9Ik0gMTc0IDMwOCBBIDQ4IDQ4IDAgMCAxIDE3NCAzNDAiIHN0cm9rZS13aWR0aD0iNyIvPgogICAgICA8cGF0aCBkPSJNIDMzOCAzMDggQSA0OCA0OCAwIDAgMCAzMzggMzQwIiBzdHJva2Utd2lkdGg9IjciLz4KICAgICAgCiAgICAgIDwhLS0gV2F2ZSAyIChNaWRkbGUgTGVmdCAmIFJpZ2h0KSAtLT4KICAgICAgPHBhdGggZD0iTSAxNDggMjk2IEEgNzYgNzYgMCAwIDEgMTQ4IDM1MiIgc3Ryb2tlLXdpZHRoPSI3IiBvcGFjaXR5PSIwLjc1Ii8+CiAgICAgIDxwYXRoIGQ9Ik0gMzY0IDI5NiBBIDc2IDc2IDAgMCAwIDM2NCAzNTIiIHN0cm9rZS13aWR0aD0iNyIgb3BhY2l0eT0iMC43NSIvPgogICAgPC9nPgoKICAgIDwhLS0gQ2VudHJhbCBTaWduYWwgQ29yZSAvIE5vdGlmaWNhdGlvbiBCYWRnZSBEb3QgLS0+CiAgICA8Y2lyY2xlIGN4PSIyNTYiIGN5PSIzMjQiIHI9IjE0IiBmaWxsPSIjMDZDNzU1Ii8+CiAgICA8Y2lyY2xlIGN4PSIyNTYiIGN5PSIzMjQiIHI9IjciIGZpbGw9IiNGRkZGRkYiLz4KICA8L2c+Cjwvc3ZnPg==">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+  <link rel="shortcut icon" href="favicon.ico">
+  <meta name="theme-color" content="#06C755">
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
   <style>
@@ -28,14 +37,12 @@
   <!-- 頂部導航 -->
   <header class="sticky top-0 z-40 glass-panel border-b border-slate-200/80 px-4 sm:px-8 py-3.5 flex items-center justify-between shadow-xs">
     <div class="flex items-center space-x-3">
-      <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white font-black text-xl shadow-md shadow-emerald-500/20">
-        💬
-      </div>
+      <img src="favicon.svg" class="w-10 h-10 rounded-2xl shadow-md shadow-emerald-500/20 shrink-0 object-contain" alt="School LINE Hub Logo">
       <div>
         <h1 class="text-sm sm:text-base font-black text-slate-900 flex items-center gap-2">
           School LINE Hub
           <span class="text-2xs font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
-            v2.2.3 穩定正式版
+            v2.2.4 穩定正式版
           </span>
         </h1>
         <p class="text-2xs sm:text-xs text-slate-500">校園官方帳號推播 ‧ 家長單一綁定 ‧ 多專案共用中心</p>
@@ -47,7 +54,7 @@
       <button onclick="openChangelogModal()" class="px-3 py-1.5 text-xs font-bold text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 rounded-xl transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer active:scale-95" title="查看系統版本更新紀錄">
         <span>📝</span>
         <span class="hidden sm:inline">版本紀錄</span>
-        <span class="text-2xs font-mono px-1.5 py-0.2 bg-slate-100 rounded text-slate-500">v2.2.3</span>
+        <span class="text-2xs font-mono px-1.5 py-0.2 bg-slate-100 rounded text-slate-500">v2.2.4</span>
       </button>
 
       <a href="#setup-guide" class="px-3 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition-all flex items-center gap-1 shadow-2xs">
@@ -544,7 +551,7 @@ function executeRemoteCore(fnName, args) {
     </div>
     <div class="flex items-center gap-3">
       <button onclick="openChangelogModal()" class="text-indigo-600 hover:text-indigo-800 font-bold hover:underline cursor-pointer">
-        查看版本更新紀錄 (v2.2.3)
+        查看版本更新紀錄 (v2.2.4)
       </button>
       <span class="text-slate-300">|</span>
       <span>純淨內部版本 ‧ 免跨表無痛推播</span>
@@ -574,14 +581,27 @@ function executeRemoteCore(fnName, args) {
       <!-- 視窗內容 (可滾動) -->
       <div class="p-6 overflow-y-auto space-y-4 text-xs text-slate-700">
 
-        <!-- v2.2.3 最新版 -->
+        <!-- v2.2.4 最新版 -->
         <div class="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200 space-y-2">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
-              <span class="font-bold text-slate-900 text-sm">v2.2.3（純代碼防干擾與介面極簡版）</span>
+              <span class="font-bold text-slate-900 text-sm">v2.2.4（全解析度專屬網頁圖示與 Favicon 體系）</span>
               <span class="px-2 py-0.5 rounded-full bg-emerald-500 text-white font-bold text-2xs">最新版</span>
             </div>
             <span class="text-slate-500 font-mono text-2xs">2026-10-29</span>
+          </div>
+          <ul class="list-disc list-inside space-y-1 text-slate-700 pl-1 text-2xs sm:text-xs">
+            <li><strong>告別瀏覽器預設灰色地球：</strong>量身打造專屬高對比「Apple 風格綠底對話泡泡 ‧ 校園學士帽 ‧ 廣播中樞」圖示體系。</li>
+            <li><strong>跨平台零延遲渲染：</strong>採用 SVG 向量直嵌（Base64 Data URI），分頁載入瞬間即刻呈現，徹底免除快取或檔案載入延遲。</li>
+            <li><strong>全尺寸規格完整覆蓋：</strong>同步配置 <code>favicon.svg</code>、<code>favicon-32x32.png</code>、<code>favicon-16x16.png</code>、<code>apple-touch-icon.png</code> (180x180) 與多尺寸 <code>favicon.ico</code>。</li>
+          </ul>
+        </div>
+
+        <!-- v2.2.3 -->
+        <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-slate-900 text-sm">v2.2.3（純代碼防干擾與介面極簡版）</span>
+            <span class="text-slate-400 font-mono text-2xs">2026-10-29</span>
           </div>
           <ul class="list-disc list-inside space-y-1 text-slate-700 pl-1 text-2xs sm:text-xs">
             <li><strong>日常私訊 100% 徹底靜音保護：</strong>移除未比對到代碼的提示回覆，家長日常閒聊（如「我笑出來！！」、請假私訊、照片）機器人一律無視、絕不插嘴。</li>
