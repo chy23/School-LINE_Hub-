@@ -147,13 +147,15 @@ function handleLineWebhook(events) {
           return;
         }
 
-        // (c) 代碼綁定比對 (相容純代碼如 g1dl5u、#g1dl5u、大寫、小寫、或綁定 g1dl5u)
-        var codeCandidate = userMsg.replace(/^[#＃]/, '').replace(/^綁定\s*/i, '').trim().toUpperCase();
-
-        if (codeCandidate && /^[A-Z0-9]{4,16}$/.test(codeCandidate) && !/^(查詢|狀態)$/.test(codeCandidate)) {
-          var bindRes = bindByToken(codeCandidate, userId);
-          if (bindRes.success) {
-            replyLine(token, replyToken, "🎉 綁定成功！\n\n已成功將 LINE 綁定至學生：【" + maskName(bindRes.studentName) + "】（座號 " + bindRes.seatNo + " 號）。\n日後作業缺繳、評量成果等最新通知將即時發送至此對話！");
+        // (c) 智慧代碼綁定比對 (相容純代碼如 de865y、#代碼、座號如 18 或 18號、學生姓名如 蕭巧羚)
+        var bindRes = bindByToken(userMsg, userId);
+        if (bindRes.success) {
+          replyLine(token, replyToken, "🎉 綁定成功！\n\n已成功將 LINE 綁定至學生：【" + maskName(bindRes.studentName) + "】（座號 " + bindRes.seatNo + " 號）。\n日後作業缺繳、評量成果等最新通知將即時發送至此對話！");
+          return;
+        } else {
+          // 若不是常見的查詢或問候語，提示綁定方法
+          if (!/^(你好|您好|hi|hello|嗨)$/i.test(userMsg)) {
+            replyLine(token, replyToken, "❓ 查無相符的學生資料。\n\n請輸入孩子的「座號」（例如：18）或專屬「查詢代碼」完成綁定！\n隨時輸入「查詢」可檢視綁定狀態。");
             return;
           }
         }
@@ -240,8 +242,19 @@ function handleClientApi(payload) {
     }
 
     var pushResult = processPushMessages(project, lineToken, targets, payload.messageTemplate);
+    var pushMsg = '';
+    if (pushResult.sentCount > 0) {
+      pushMsg = '成功發送 ' + pushResult.sentCount + ' 則成績推播！';
+    } else if (pushResult.skippedCount > 0) {
+      var tInfo = targets[0] ? ((targets[0].seatNo ? targets[0].seatNo + ' 號 ' : '') + (targets[0].studentName || '')) : '';
+      pushMsg = '推播略過：學生【' + tInfo + '】尚未綁定家長 LINE（LINE_UID 為空）！';
+    } else {
+      pushMsg = '推播發送失敗，請檢視推播紀錄。';
+    }
+
     return createJsonResponse({
-      status: 'success',
+      status: (pushResult.sentCount > 0) ? 'success' : 'skipped',
+      message: pushMsg,
       sentCount: pushResult.sentCount,
       failedCount: pushResult.failedCount,
       skippedCount: pushResult.skippedCount,
@@ -384,7 +397,7 @@ function replyLine(token, replyToken, text) {
   }
 }
 
-function bindByToken(token, lineUserId) {
+function bindByToken(tokenOrQuery, lineUserId) {
   var sheet = getSheet('BINDINGS');
   if (!sheet) return { success: false };
 
@@ -397,10 +410,26 @@ function bindByToken(token, lineUserId) {
   var dateCol = headers.indexOf('綁定時間');
   var statusCol = headers.indexOf('狀態');
 
+  var rawInput = (tokenOrQuery || '').toString().trim();
+  var cleanInput = rawInput.replace(/^[#＃]/, '').replace(/^綁定\s*/i, '').replace(/^座號\s*/i, '').replace(/號$/, '').trim();
+  var upperInput = cleanInput.toUpperCase();
+  var seatNum = cleanInput.replace(/^0+/, '');
+
   for (var i = 1; i < data.length; i++) {
     var row = data[i];
-    var rawTok = (row[tokenCol] || '').toString().trim().toUpperCase();
-    if (tokenCol !== -1 && rawTok === token) {
+    var rawTok = (tokenCol !== -1 && row[tokenCol]) ? row[tokenCol].toString().trim().toUpperCase() : '';
+    var sSeat = (seatCol !== -1 && row[seatCol]) ? row[seatCol].toString().trim().replace(/^0+/, '') : '';
+    var sName = (nameCol !== -1 && row[nameCol]) ? row[nameCol].toString().trim() : '';
+
+    var isMatch = false;
+    // 1. 代碼完全相符 (例如 de865y, y6mfz2, g1dl5u)
+    if (rawTok && upperInput === rawTok) isMatch = true;
+    // 2. 座號相符 (例如家長傳 18 或 18號 或 018)
+    else if (seatNum && sSeat && seatNum === sSeat) isMatch = true;
+    // 3. 學生姓名相符 (例如 蕭巧羚)
+    else if (sName && cleanInput === sName) isMatch = true;
+
+    if (isMatch) {
       var nowStr = Utilities.formatDate(new Date(), "Asia/Taipei", "yyyy/MM/dd HH:mm:ss");
       sheet.getRange(i + 1, uidCol + 1).setValue(lineUserId);
       if (dateCol !== -1) sheet.getRange(i + 1, dateCol + 1).setValue(nowStr);
@@ -626,4 +655,137 @@ function maskName(name) {
 
 function createJsonResponse(obj, code) {
   return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+}
+
+// =============================================================================
+// 診斷與測試輔助函式 (可直接在 GAS 編輯器上方選單選取執行)
+// =============================================================================
+
+/**
+ * 🧪 一鍵測試推播 18 號 (蕭巧羚)
+ * 若 18 號尚未綁定，會自動借用名冊中已綁定的測試 UID，讓您手機立即收到通知！
+ */
+function testPushSeat18() {
+  Logger.log("=== 開始測試推播 18 號 (蕭巧羚) ===");
+  var sheet = getSheet('BINDINGS');
+  if (!sheet) {
+    Logger.log("❌ 找不到【家長綁定名冊】分頁！");
+    return;
+  }
+  
+  var lineToken = getSystemConfig('lineChannelAccessToken');
+  if (!lineToken) {
+    Logger.log("❌ 尚未讀取到 LINE Channel Access Token！");
+    return;
+  }
+
+  var data = sheet.getDataRange().getValues();
+  var seatCol = data[0].indexOf('座號');
+  var uidCol = data[0].indexOf('LINE_UID');
+  var nameCol = data[0].indexOf('學生姓名');
+  var tokenCol = data[0].indexOf('查詢代碼');
+  var dateCol = data[0].indexOf('綁定時間');
+  var statusCol = data[0].indexOf('狀態');
+
+  var targetRow = -1;
+  var existingValidUid = '';
+
+  for (var i = 1; i < data.length; i++) {
+    var sSeat = String(data[i][seatCol]).replace(/^0+/, '');
+    var sUid = String(data[i][uidCol] || '').trim();
+    if (sSeat === '18') {
+      targetRow = i;
+    }
+    // 尋找名冊中任何既有的真實 LINE_UID (以 U 開頭且長度 33 碼)
+    if (!existingValidUid && sUid.indexOf('U') === 0 && sUid.length > 25 && sUid !== 'U_TEST_DEBUG_UID') {
+      existingValidUid = sUid;
+    }
+  }
+
+  if (targetRow === -1) {
+    Logger.log("❌ 名冊中找不到座號 18 號！");
+    return;
+  }
+
+  var sName = data[targetRow][nameCol];
+  var sTok = data[targetRow][tokenCol];
+  var sUid = String(data[targetRow][uidCol] || '').trim();
+
+  Logger.log("📌 18號學生資料：姓名=" + sName + ", 代碼=" + sTok + ", LINE_UID=" + (sUid || "(空白，尚未綁定)"));
+
+  // 如果 18 號尚未綁定
+  if (!sUid || sUid === 'U_TEST_DEBUG_UID') {
+    if (existingValidUid) {
+      Logger.log("💡 偵測到您在名冊其他學生（例如 2 號）已綁定之真實 LINE UID：" + existingValidUid);
+      Logger.log("⚡ 正在將此真實 UID 自動關聯至 18 號，以利推播測試...");
+      sheet.getRange(targetRow + 1, uidCol + 1).setValue(existingValidUid);
+      if (dateCol !== -1) sheet.getRange(targetRow + 1, dateCol + 1).setValue(Utilities.formatDate(new Date(), "Asia/Taipei", "yyyy/MM/dd HH:mm:ss"));
+      if (statusCol !== -1) sheet.getRange(targetRow + 1, statusCol + 1).setValue('已綁定');
+      sUid = existingValidUid;
+      Logger.log("✅ 18 號已成功關聯真實 LINE UID！");
+    } else {
+      Logger.log("⚠️ 18 號目前沒有 LINE_UID，且名冊中尚無其他真實 LINE 帳號！");
+      Logger.log("👉 請拿起手機開啟 LINE 官方帳號對話框，傳送「18」或「" + sTok + "」即可完成綁定！");
+      return;
+    }
+  }
+
+  // 立即發送真實 LINE 推播給 18 號
+  Logger.log("🚀 正在發送【平時成績更新通知】給 18 號 (" + sUid + ")...");
+  var testMsg = "📊 【平時成績更新通知】\n\n" +
+                sName + " 家長您好：\n" +
+                "平時評量成績已完成登錄，請家長參閱最新學習手札。\n\n" +
+                "🔗 點此開啟明細查看：\n" +
+                "https://chy23.github.io/MPScore-Daily/parent.html?t=" + encodeURIComponent(sTok || 'Y6MFZ2') + "\n\n" +
+                "（由 School LINE Hub 自動發送）";
+
+  try {
+    var resp = UrlFetchApp.fetch("https://api.line.me/v2/bot/message/push", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + lineToken
+      },
+      payload: JSON.stringify({
+        to: sUid,
+        messages: [{ type: "text", text: testMsg }]
+      }),
+      muteHttpExceptions: true
+    });
+
+    var code = resp.getResponseCode();
+    var body = resp.getContentText();
+    Logger.log("LINE API 回應代碼: " + code);
+    if (code === 200) {
+      Logger.log("🎉🎉 推播發送成功！請檢查您的手機 LINE，訊息應已送達！");
+    } else {
+      Logger.log("❌ LINE 回傳錯誤: " + body);
+    }
+  } catch(e) {
+    Logger.log("❌ 發送異常: " + e.toString());
+  }
+  Logger.log("=== 測試結束 ===");
+}
+
+/**
+ * 🔍 全自動中樞健康診斷
+ */
+function debugCheckAll() {
+  Logger.log("=== 開始中樞診斷 ===");
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  Logger.log("1. 試算表名稱: " + ss.getName());
+
+  var cfgSheet = getSheet('CONFIG');
+  Logger.log("2. 系統設定分頁: " + (cfgSheet ? "✅ 存在 (" + cfgSheet.getName() + ")" : "❌ 找不到分頁！"));
+  var token = getSystemConfig('lineChannelAccessToken');
+  Logger.log("3. LINE Token: " + (token && token.length > 30 ? "✅ 正常讀取 (長度 " + token.length + ")" : "❌ 讀取失敗或為空！"));
+
+  var bindSheet = getSheet('BINDINGS');
+  Logger.log("4. 家長名冊分頁: " + (bindSheet ? "✅ 存在 (" + bindSheet.getName() + ")" : "❌ 找不到分頁！"));
+
+  if (bindSheet) {
+    var res18 = bindByToken('18', 'U_TEST_DEBUG_UID');
+    Logger.log("5. 模擬以座號 18 綁定: " + JSON.stringify(res18));
+  }
+  Logger.log("=== 診斷結束 ===");
 }

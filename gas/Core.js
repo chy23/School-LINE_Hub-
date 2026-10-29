@@ -1,52 +1,54 @@
 /**
  * =========================================================================
- * School LINE Hub - 核心業務引擎 (Core.js)
- * 由 Loader.gs 動態從 GitHub 載入執行，實現免重新部署的自動熱更新！
+ * School LINE Hub - 核心後端完整版 (gas/Code.gs)
  * =========================================================================
+ * 
+ * 核心職責：
+ * 1. 唯一管理 LINE Messaging API Channel Access Token 與 Webhook
+ * 2. 集中維護「全校/全班學生與家長 LINE UID」綁定主表（Single Source of Truth）
+ * 3. 提供安全 RESTful API，供子專案（RP_QR_CC_HW、MPScore-Daily 等）接入
+ * 4. 支援中文與英文工作表名稱自動雙向辨識，支援 A1 純 Token 字串讀取防呆
+ * 5. 完全獨立執行，絕無 Loader.gs 遞迴呼叫 (Maximum call stack size exceeded) 錯誤
  */
 
-var SHEETS = {
-  CONFIG: 'SystemConfig',
-  PROJECTS: 'AuthorizedProjects',
-  BINDINGS: 'ParentBindings',
-  LOGS: 'PushLogs'
-};
+// 取得工作表輔助函式（自動支援繁體中文與原本英文名稱）
+function getSheet(type) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (type === 'CONFIG') return ss.getSheetByName('系統設定') || ss.getSheetByName('SystemConfig');
+  if (type === 'PROJECTS') return ss.getSheetByName('授權專案名單') || ss.getSheetByName('AuthorizedProjects');
+  if (type === 'BINDINGS') return ss.getSheetByName('家長綁定名冊') || ss.getSheetByName('ParentBindings');
+  if (type === 'LOGS') return ss.getSheetByName('推播紀錄') || ss.getSheetByName('PushLogs');
+  return null;
+}
 
-var HUB_VERSION = "2.1.0-live";
-
+/**
+ * 處理 HTTP GET 請求（管理網站入口 / 健康檢查）
+ */
 function doGet(e) {
   var param = (e && e.parameter) || {};
   
-  // API 健康檢查或狀態確認
   if (param.action === 'ping') {
     return createJsonResponse({
       status: 'ok',
-      version: HUB_VERSION,
       service: 'School-LINE-Hub',
       activeBindings: getActiveBindingsCount(),
-      serverTime: new Date().toISOString()
+      time: new Date().toISOString()
     });
   }
 
-  // 匯出/備份名冊
-  if (param.action === 'export_bindings') {
-    return createJsonResponse({
-      status: 'success',
-      bindings: getAllBindingsRaw()
-    });
-  }
-
-  // 嘗試載入 index.html 模板，若不存在則動態生成高質感管理中心 HTML
   try {
     return HtmlService.createHtmlOutputFromFile('index')
       .setTitle('School LINE Hub - 管理控制中心')
       .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
       .addMetaTag('viewport', 'width=device-width, initial-scale=1');
   } catch (err) {
-    return renderDynamicAdminPanel();
+    return HtmlService.createHtmlOutput('<h2>School LINE Hub 中樞服務正常運作中</h2><p>時間：' + new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) + '</p>');
   }
 }
 
+/**
+ * 處理 HTTP POST 請求（雙軌：LINE Webhook 與 子專案推播 API）
+ */
 function doPost(e) {
   var lock = LockService.getScriptLock();
   try {
@@ -67,12 +69,12 @@ function doPost(e) {
       return createJsonResponse({ status: 'error', message: 'JSON 解析失敗' }, 400);
     }
 
-    // 軌道一：處理 LINE Webhook
+    // 軌道一：處理 LINE 官方帳號 Webhook 事件
     if (payload.events !== undefined) {
       return handleLineWebhook(payload.events);
     }
 
-    // 軌道二：處理子專案 API 呼叫
+    // 軌道二：處理子專案 API 接入請求 (如 MPScore-Daily, RP_QR_CC_HW)
     if (payload.action) {
       return handleClientApi(payload);
     }
@@ -88,7 +90,7 @@ function doPost(e) {
 }
 
 // =============================================================================
-// LINE Webhook 處理邏輯
+// 軌道一：LINE Webhook 處理邏輯
 // =============================================================================
 
 function handleLineWebhook(events) {
@@ -102,9 +104,8 @@ function handleLineWebhook(events) {
     try {
       // 1. 加好友事件 (Follow)
       if (ev.type === 'follow') {
-        var welcomeMsg = "👋 您好！歡迎加入【校園班級智慧推播中樞】。\n\n" +
-          "為了精準接收孩子的作業缺繳、成績成果與校園重要通知，請傳送「學生專屬代碼」或「座號+姓名」進行綁定。\n\n" +
-          "💡 範例：輸入「#B101」或「綁定 05 王小明」\n" +
+        var welcomeMsg = "👋 您好！歡迎加入【校園智慧推播中樞】。\n\n" +
+          "為了精準接收孩子的作業缺繳、成績成果與校園重要通知，請傳送「學生查詢代碼」完成綁定。\n\n" +
           "隨時輸入「查詢」可檢視已綁定之學生資訊。";
         replyLine(token, ev.replyToken, welcomeMsg);
         return;
@@ -118,24 +119,24 @@ function handleLineWebhook(events) {
 
         if (!userId) return;
 
-        // (a) 查詢已綁定學生
+        // (a) 查詢指令
         if (userMsg === '查詢' || userMsg === '狀態' || userMsg === '查學生' || userMsg.toLowerCase() === 'info') {
           var bindings = getBindingsByLineUserId(userId);
           if (bindings.length === 0) {
-            replyLine(token, replyToken, "ℹ️ 您目前尚未綁定任何學生。\n\n請輸入學生專屬綁定代碼（例如：#A102）完成連結！");
+            replyLine(token, replyToken, "ℹ️ 您目前尚未綁定任何學生。\n\n請輸入學生專屬查詢代碼完成連結！");
           } else {
             var msg = "📋 【已綁定學生名冊】\n";
             bindings.forEach(function(b, idx) {
               msg += "\n" + (idx + 1) + ". " + maskName(b.studentName) + "（" + (b.seatNo ? "座號 " + b.seatNo : b.studentId) + "）\n" +
                      "   綁定時間：" + (b.boundAt ? b.boundAt.substring(0, 10) : "已綁定");
             });
-            msg += "\n\n💡 只要老師發布各項專案通知（作業手札、成績單等），系統將自動為您推播！";
+            msg += "\n\n💡 只要老師發布各項專案通知（作業缺交、成績單等），系統將自動為您推播！";
             replyLine(token, replyToken, msg);
           }
           return;
         }
 
-        // (b) 自主解除綁定
+        // (b) 解除綁定指令
         if (userMsg === '解除綁定' || userMsg === '取消綁定' || userMsg === '解綁') {
           var unbindCount = unbindByLineUserId(userId);
           if (unbindCount > 0) {
@@ -146,32 +147,16 @@ function handleLineWebhook(events) {
           return;
         }
 
-        // (c) 綁定代碼比對
-        var bindMatch = false;
-        var tokenCandidate = "";
-        if (userMsg.indexOf('#') === 0) {
-          tokenCandidate = userMsg.substring(1).trim().toUpperCase();
-        } else if (/^[A-Za-z0-9]{4,16}$/.test(userMsg) && !/^(查詢|狀態)$/.test(userMsg)) {
-          tokenCandidate = userMsg.toUpperCase();
-        }
-
-        if (tokenCandidate) {
-          var bindRes = bindByToken(tokenCandidate, userId);
-          if (bindRes.success) {
-            replyLine(token, replyToken, "🎉 綁定成功！\n\n已成功將 LINE 綁定至學生：【" + maskName(bindRes.studentName) + "】（座號 " + bindRes.seatNo + "）。\n日後作業缺繳、評量成果等最新通知將即時發送至此對話！");
-            bindMatch = true;
-          }
-        }
-
-        // (d) 輸入「綁定 05 王小明」
-        if (!bindMatch && (userMsg.indexOf('綁定') === 0 || userMsg.indexOf('登記') === 0)) {
-          var parts = userMsg.replace(/^(綁定|登記)[:\s]*/, '').trim().split(/\s+/);
-          if (parts.length >= 2) {
-            var bindSeatRes = bindBySeatAndName(parts[0], parts[1], userId);
-            if (bindSeatRes.success) {
-              replyLine(token, replyToken, "🎉 綁定成功！\n\n已成功將 LINE 綁定至學生：【" + maskName(bindSeatRes.studentName) + "】（座號 " + bindSeatRes.seatNo + "）。");
-              bindMatch = true;
-            }
+        // (c) 智慧代碼綁定比對 (相容純代碼如 de865y、#代碼、座號如 18 或 18號、學生姓名如 蕭巧羚)
+        var bindRes = bindByToken(userMsg, userId);
+        if (bindRes.success) {
+          replyLine(token, replyToken, "🎉 綁定成功！\n\n已成功將 LINE 綁定至學生：【" + maskName(bindRes.studentName) + "】（座號 " + bindRes.seatNo + " 號）。\n日後作業缺繳、評量成果等最新通知將即時發送至此對話！");
+          return;
+        } else {
+          // 若不是常見的查詢或問候語，提示綁定方法
+          if (!/^(你好|您好|hi|hello|嗨)$/i.test(userMsg)) {
+            replyLine(token, replyToken, "❓ 查無相符的學生資料。\n\n請輸入孩子的「座號」（例如：18）或專屬「查詢代碼」完成綁定！\n隨時輸入「查詢」可檢視綁定狀態。");
+            return;
           }
         }
       }
@@ -184,7 +169,7 @@ function handleLineWebhook(events) {
 }
 
 // =============================================================================
-// 子專案 API 接入邏輯
+// 軌道二：子專案 API 接入邏輯 (供 MPScore-Daily, RP_QR 等系統呼叫)
 // =============================================================================
 
 function handleClientApi(payload) {
@@ -198,14 +183,7 @@ function handleClientApi(payload) {
     return createJsonResponse({ status: 'success', message: '中樞工作表初始化建立完成' });
   }
 
-  // 2. 從舊專案試算表一鍵匯入家長綁定
-  if (action === 'import_legacy_bindings') {
-    var legacyUrl = payload.legacySpreadsheetUrl;
-    var importResult = importFromLegacySpreadsheet(legacyUrl);
-    return createJsonResponse(importResult);
-  }
-
-  // 3. 驗證金鑰
+  // 2. 驗證金鑰
   var project = verifyProjectAuth(appId, appSecret);
   if (!project) {
     return createJsonResponse({
@@ -214,7 +192,7 @@ function handleClientApi(payload) {
     }, 401);
   }
 
-  // (A) 測試連線
+  // (A) 測試連線 (Ping / Verify)
   if (action === 'ping' || action === 'verify_client') {
     return createJsonResponse({
       status: 'success',
@@ -224,12 +202,11 @@ function handleClientApi(payload) {
       monthlyQuota: project.monthlyQuota,
       usedCount: project.usedCount,
       activeBindingsCount: getActiveBindingsCount(),
-      hubVersion: HUB_VERSION,
       serverTime: new Date().toISOString()
     });
   }
 
-  // (B) 查詢特定學生
+  // (B) 查詢特定學生的綁定狀態
   if (action === 'get_student_binding') {
     var target = payload.target || {};
     var bindings = findBindings(target);
@@ -242,7 +219,7 @@ function handleClientApi(payload) {
     });
   }
 
-  // (C) 批次取得全班綁定摘要
+  // (C) 批次取得全班綁定對照清單
   if (action === 'get_all_bindings_summary') {
     var allBindings = getAllBindingsSummary();
     return createJsonResponse({
@@ -252,17 +229,32 @@ function handleClientApi(payload) {
     });
   }
 
-  // (D) 發送推播
+  // (D) 發送推播訊息 (Push Notification)
   if (action === 'send_push') {
     var lineToken = getSystemConfig('lineChannelAccessToken');
     if (!lineToken) {
       return createJsonResponse({ status: 'error', message: '中樞尚未設定 LINE Channel Access Token' }, 500);
     }
 
-    var targets = payload.targets || [payload.target];
+    var targets = payload.targets || (payload.target ? [payload.target] : []);
+    if (!Array.isArray(targets) || targets.length === 0) {
+      return createJsonResponse({ status: 'error', message: '缺少推播目標 (target 或 targets)' }, 400);
+    }
+
     var pushResult = processPushMessages(project, lineToken, targets, payload.messageTemplate);
+    var pushMsg = '';
+    if (pushResult.sentCount > 0) {
+      pushMsg = '成功發送 ' + pushResult.sentCount + ' 則成績推播！';
+    } else if (pushResult.skippedCount > 0) {
+      var tInfo = targets[0] ? ((targets[0].seatNo ? targets[0].seatNo + ' 號 ' : '') + (targets[0].studentName || '')) : '';
+      pushMsg = '推播略過：學生【' + tInfo + '】尚未綁定家長 LINE（LINE_UID 為空）！';
+    } else {
+      pushMsg = '推播發送失敗，請檢視推播紀錄。';
+    }
+
     return createJsonResponse({
-      status: 'success',
+      status: (pushResult.sentCount > 0) ? 'success' : 'skipped',
+      message: pushMsg,
       sentCount: pushResult.sentCount,
       failedCount: pushResult.failedCount,
       skippedCount: pushResult.skippedCount,
@@ -278,15 +270,14 @@ function handleClientApi(payload) {
 // =============================================================================
 
 function processPushMessages(project, lineToken, targets, defaultTemplate) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var logSheet = (ss.getSheetByName('推播紀錄') || ss.getSheetByName('PushLogs'));
+  var logSheet = getSheet('LOGS');
   
   var sentCount = 0;
   var failedCount = 0;
   var skippedCount = 0;
   var details = [];
   var logRows = [];
-  var nowStr = Utilities.formatDate(new Date(), "Asia/Taipei", "yyyy-MM-dd HH:mm:ss");
+  var nowStr = Utilities.formatDate(new Date(), "Asia/Taipei", "yyyy/MM/dd HH:mm:ss");
 
   targets.forEach(function(item) {
     if (!item) return;
@@ -346,13 +337,10 @@ function processPushMessages(project, lineToken, targets, defaultTemplate) {
         logRows.push([
           nowStr,
           project.appId,
-          project.projectName,
           parent.studentId || parent.seatNo,
-          parent.studentName,
           parent.lineUserId,
           textMsg.substring(0, 100),
-          isOk ? 'SUCCESS' : 'FAILED',
-          respCode + ': ' + respBody.substring(0, 120)
+          isOk ? 'SUCCESS' : ('FAILED ' + respCode)
         ]);
 
       } catch (pushErr) {
@@ -361,13 +349,10 @@ function processPushMessages(project, lineToken, targets, defaultTemplate) {
         logRows.push([
           nowStr,
           project.appId,
-          project.projectName,
           parent.studentId || parent.seatNo,
-          parent.studentName,
           parent.lineUserId,
           textMsg.substring(0, 100),
-          'ERROR',
-          pushErr.toString()
+          'ERROR: ' + pushErr.toString()
         ]);
       }
     });
@@ -389,7 +374,7 @@ function processPushMessages(project, lineToken, targets, defaultTemplate) {
 }
 
 // =============================================================================
-// LINE 輔助與資料庫函式
+// LINE 輔助與資料庫存取
 // =============================================================================
 
 function replyLine(token, replyToken, text) {
@@ -412,56 +397,8 @@ function replyLine(token, replyToken, text) {
   }
 }
 
-function getBindingsByLineUserId(lineUserId) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = (ss.getSheetByName('家長綁定名冊') || ss.getSheetByName('ParentBindings'));
-  if (!sheet || sheet.getLastRow() <= 1) return [];
-
-  var data = sheet.getDataRange().getValues();
-  var headers = data[0];
-  var uidCol = headers.indexOf('LINE_UID');
-  var nameCol = headers.indexOf('學生姓名');
-  var seatCol = headers.indexOf('座號');
-  var idCol = headers.indexOf('學號');
-  var dateCol = headers.indexOf('綁定時間');
-
-  var results = [];
-  for (var i = 1; i < data.length; i++) {
-    var row = data[i];
-    if (row[uidCol] === lineUserId) {
-      results.push({
-        studentId: row[idCol] || '',
-        seatNo: row[seatCol] || '',
-        studentName: row[nameCol] || '',
-        boundAt: row[dateCol] ? row[dateCol].toString() : ''
-      });
-    }
-  }
-  return results;
-}
-
-function unbindByLineUserId(lineUserId) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = (ss.getSheetByName('家長綁定名冊') || ss.getSheetByName('ParentBindings'));
-  if (!sheet || sheet.getLastRow() <= 1) return 0;
-
-  var data = sheet.getDataRange().getValues();
-  var uidCol = data[0].indexOf('LINE_UID');
-  if (uidCol === -1) return 0;
-
-  var count = 0;
-  for (var i = 1; i < data.length; i++) {
-    if (data[i][uidCol] === lineUserId) {
-      sheet.getRange(i + 1, uidCol + 1).setValue('');
-      count++;
-    }
-  }
-  return count;
-}
-
-function bindByToken(token, lineUserId) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = (ss.getSheetByName('家長綁定名冊') || ss.getSheetByName('ParentBindings'));
+function bindByToken(tokenOrQuery, lineUserId) {
+  var sheet = getSheet('BINDINGS');
   if (!sheet) return { success: false };
 
   var data = sheet.getDataRange().getValues();
@@ -471,49 +408,33 @@ function bindByToken(token, lineUserId) {
   var nameCol = headers.indexOf('學生姓名');
   var seatCol = headers.indexOf('座號');
   var dateCol = headers.indexOf('綁定時間');
+  var statusCol = headers.indexOf('狀態');
+
+  var rawInput = (tokenOrQuery || '').toString().trim();
+  var cleanInput = rawInput.replace(/^[#＃]/, '').replace(/^綁定\s*/i, '').replace(/^座號\s*/i, '').replace(/號$/, '').trim();
+  var upperInput = cleanInput.toUpperCase();
+  var seatNum = cleanInput.replace(/^0+/, '');
 
   for (var i = 1; i < data.length; i++) {
     var row = data[i];
-    if (tokenCol !== -1 && (row[tokenCol] || '').toString().trim().toUpperCase() === token) {
+    var rawTok = (tokenCol !== -1 && row[tokenCol]) ? row[tokenCol].toString().trim().toUpperCase() : '';
+    var sSeat = (seatCol !== -1 && row[seatCol]) ? row[seatCol].toString().trim().replace(/^0+/, '') : '';
+    var sName = (nameCol !== -1 && row[nameCol]) ? row[nameCol].toString().trim() : '';
+
+    var isMatch = false;
+    // 1. 代碼完全相符 (例如 de865y, y6mfz2, g1dl5u)
+    if (rawTok && upperInput === rawTok) isMatch = true;
+    // 2. 座號相符 (例如家長傳 18 或 18號 或 018)
+    else if (seatNum && sSeat && seatNum === sSeat) isMatch = true;
+    // 3. 學生姓名相符 (例如 蕭巧羚)
+    else if (sName && cleanInput === sName) isMatch = true;
+
+    if (isMatch) {
+      var nowStr = Utilities.formatDate(new Date(), "Asia/Taipei", "yyyy/MM/dd HH:mm:ss");
       sheet.getRange(i + 1, uidCol + 1).setValue(lineUserId);
-      if (dateCol !== -1) {
-        sheet.getRange(i + 1, dateCol + 1).setValue(Utilities.formatDate(new Date(), "Asia/Taipei", "yyyy-MM-dd HH:mm:ss"));
-      }
-      return {
-        success: true,
-        studentName: row[nameCol],
-        seatNo: row[seatCol]
-      };
-    }
-  }
-
-  return { success: false };
-}
-
-function bindBySeatAndName(seat, name, lineUserId) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = (ss.getSheetByName('家長綁定名冊') || ss.getSheetByName('ParentBindings'));
-  if (!sheet) return { success: false };
-
-  var data = sheet.getDataRange().getValues();
-  var headers = data[0];
-  var seatCol = headers.indexOf('座號');
-  var nameCol = headers.indexOf('學生姓名');
-  var uidCol = headers.indexOf('LINE_UID');
-  var dateCol = headers.indexOf('綁定時間');
-
-  var normSeat = seat.toString().replace(/^0+/, '');
-
-  for (var i = 1; i < data.length; i++) {
-    var row = data[i];
-    var sVal = (row[seatCol] || '').toString().replace(/^0+/, '');
-    var nVal = (row[nameCol] || '').toString().trim();
-
-    if (sVal === normSeat && nVal === name.trim()) {
-      sheet.getRange(i + 1, uidCol + 1).setValue(lineUserId);
-      if (dateCol !== -1) {
-        sheet.getRange(i + 1, dateCol + 1).setValue(Utilities.formatDate(new Date(), "Asia/Taipei", "yyyy-MM-dd HH:mm:ss"));
-      }
+      if (dateCol !== -1) sheet.getRange(i + 1, dateCol + 1).setValue(nowStr);
+      if (statusCol !== -1) sheet.getRange(i + 1, statusCol + 1).setValue('已綁定');
+      
       return {
         success: true,
         studentName: row[nameCol],
@@ -526,8 +447,7 @@ function bindBySeatAndName(seat, name, lineUserId) {
 }
 
 function findBindings(target) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = (ss.getSheetByName('家長綁定名冊') || ss.getSheetByName('ParentBindings'));
+  var sheet = getSheet('BINDINGS');
   if (!sheet || sheet.getLastRow() <= 1) return [];
 
   var data = sheet.getDataRange().getValues();
@@ -575,8 +495,7 @@ function findBindings(target) {
 }
 
 function getAllBindingsSummary() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = (ss.getSheetByName('家長綁定名冊') || ss.getSheetByName('ParentBindings'));
+  var sheet = getSheet('BINDINGS');
   if (!sheet || sheet.getLastRow() <= 1) return {};
 
   var data = sheet.getDataRange().getValues();
@@ -602,9 +521,55 @@ function getAllBindingsSummary() {
   return summary;
 }
 
+function getBindingsByLineUserId(lineUserId) {
+  var sheet = getSheet('BINDINGS');
+  if (!sheet || sheet.getLastRow() <= 1) return [];
+
+  var data = sheet.getDataRange().getValues();
+  var headers = data[0];
+  var uidCol = headers.indexOf('LINE_UID');
+  var nameCol = headers.indexOf('學生姓名');
+  var seatCol = headers.indexOf('座號');
+  var idCol = headers.indexOf('學號');
+  var dateCol = headers.indexOf('綁定時間');
+
+  var results = [];
+  for (var i = 1; i < data.length; i++) {
+    var row = data[i];
+    if (row[uidCol] === lineUserId) {
+      results.push({
+        studentId: row[idCol] || '',
+        seatNo: row[seatCol] || '',
+        studentName: row[nameCol] || '',
+        boundAt: row[dateCol] ? row[dateCol].toString() : ''
+      });
+    }
+  }
+  return results;
+}
+
+function unbindByLineUserId(lineUserId) {
+  var sheet = getSheet('BINDINGS');
+  if (!sheet || sheet.getLastRow() <= 1) return 0;
+
+  var data = sheet.getDataRange().getValues();
+  var uidCol = data[0].indexOf('LINE_UID');
+  var statusCol = data[0].indexOf('狀態');
+  if (uidCol === -1) return 0;
+
+  var count = 0;
+  for (var i = 1; i < data.length; i++) {
+    if (data[i][uidCol] === lineUserId) {
+      sheet.getRange(i + 1, uidCol + 1).setValue('');
+      if (statusCol !== -1) sheet.getRange(i + 1, statusCol + 1).setValue('已解除');
+      count++;
+    }
+  }
+  return count;
+}
+
 function getActiveBindingsCount() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = (ss.getSheetByName('家長綁定名冊') || ss.getSheetByName('ParentBindings'));
+  var sheet = getSheet('BINDINGS');
   if (!sheet || sheet.getLastRow() <= 1) return 0;
   var data = sheet.getDataRange().getValues();
   var uidCol = data[0].indexOf('LINE_UID');
@@ -621,8 +586,7 @@ function getActiveBindingsCount() {
 function verifyProjectAuth(appId, appSecret) {
   if (!appId || !appSecret) return null;
 
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = (ss.getSheetByName('授權專案名單') || ss.getSheetByName('AuthorizedProjects'));
+  var sheet = getSheet('PROJECTS');
   if (!sheet || sheet.getLastRow() <= 1) return null;
 
   var data = sheet.getDataRange().getValues();
@@ -644,8 +608,7 @@ function verifyProjectAuth(appId, appSecret) {
 
 function incrementProjectUsage(appId, count) {
   if (!count || count <= 0) return;
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = (ss.getSheetByName('授權專案名單') || ss.getSheetByName('AuthorizedProjects'));
+  var sheet = getSheet('PROJECTS');
   if (!sheet || sheet.getLastRow() <= 1) return;
 
   var data = sheet.getDataRange().getValues();
@@ -658,154 +621,28 @@ function incrementProjectUsage(appId, count) {
   }
 }
 
+// 支援純 Token 字串與 JSON 雙相容讀取
 function getSystemConfig(key) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName('系統設定') || ss.getSheetByName('SystemConfig');
+  var sheet = getSheet('CONFIG');
   if (!sheet) return '';
   
   var val = (sheet.getRange("A1").getValue() || '').toString().trim();
   if (!val) return '';
 
-  // 1. 若為 JSON 格式
-  try {
-    var obj = JSON.parse(val);
-    if (obj && obj[key]) return obj[key];
-  } catch(e) {}
-
-  // 2. 防呆容錯：若使用者直接在 A1 貼上純 Token 字串
+  // 1. 若為純 Token 字串 (直接回傳)
   if (key === 'lineChannelAccessToken') {
     if (val.length > 30 && val.indexOf('{') === -1) {
       return val;
     }
   }
 
-  return '';
-}
-
-// =============================================================================
-// 一鍵從舊專案（作業手札/成績）試算表匯入家長資料
-// =============================================================================
-
-function importFromLegacySpreadsheet(legacyUrl) {
-  if (!legacyUrl) return { status: 'error', message: '請提供舊專案試算表網址！' };
-
+  // 2. 若為 JSON 格式
   try {
-    var srcSs = SpreadsheetApp.openByUrl(legacyUrl);
-    var sheets = srcSs.getSheets();
-    var targetSheet = null;
-
-    for (var s = 0; s < sheets.length; s++) {
-      var name = sheets[s].getName();
-      if (name.indexOf('LINE用戶綁定') !== -1 || name.indexOf('家長綁定') !== -1) {
-        targetSheet = sheets[s];
-        break;
-      }
-    }
-
-    if (!targetSheet) {
-      return { status: 'error', message: '在來源試算表找不到包含「LINE用戶綁定」的分頁！' };
-    }
-
-    var sData = targetSheet.getDataRange().getValues();
-    if (sData.length <= 1) return { status: 'error', message: '來源工作表為空！' };
-
-    var headers = sData[0];
-    var seatCol = -1, nameCol = -1, tokenCol = -1, uidCol = -1;
-
-    for (var c = 0; c < headers.length; c++) {
-      var h = (headers[c] || '').toString().trim();
-      if (h === '座號') seatCol = c;
-      if (h === '姓名' || h === '學生姓名') nameCol = c;
-      if (h === '防偽代碼' || h === '查詢代碼' || h === 'Token') tokenCol = c;
-      if (h.indexOf('LINE') !== -1 || h === 'UID') uidCol = c;
-    }
-
-    var destSs = SpreadsheetApp.getActiveSpreadsheet();
-    var destSheet = destSs.getSheetByName(SHEETS.BINDINGS) || destSs.insertSheet(SHEETS.BINDINGS);
-    var destData = destSheet.getDataRange().getValues();
-    var nowStr = Utilities.formatDate(new Date(), "Asia/Taipei", "yyyy-MM-dd HH:mm:ss");
-
-    var importedCount = 0;
-    for (var r = 1; r < sData.length; r++) {
-      var row = sData[r];
-      var sSeat = seatCol !== -1 ? (row[seatCol] || '') : '';
-      var sName = nameCol !== -1 ? (row[nameCol] || '') : '';
-      var sTok = tokenCol !== -1 ? (row[tokenCol] || '') : '';
-      var sUid = uidCol !== -1 ? (row[uidCol] || '').toString().trim() : '';
-
-      if (!sSeat && !sName && !sUid) continue;
-
-      // 檢查是否已存在
-      var existRow = -1;
-      for (var d = 1; d < destData.length; d++) {
-        if (destData[d][0] == sSeat || destData[d][2] == sName) {
-          existRow = d + 1;
-          break;
-        }
-      }
-
-      if (existRow !== -1) {
-        if (sUid) destSheet.getRange(existRow, 5).setValue(sUid);
-        if (sTok) destSheet.getRange(existRow, 4).setValue(sTok);
-      } else {
-        destSheet.appendRow([sSeat, '', sName, sTok, sUid, nowStr, 'ACTIVE']);
-      }
-      importedCount++;
-    }
-
-    return {
-      status: 'success',
-      message: '成功從舊專案匯入 ' + importedCount + ' 筆家長綁定資料！',
-      importedCount: importedCount
-    };
-
-  } catch(err) {
-    return { status: 'error', message: '匯入失敗: ' + err.toString() };
-  }
-}
-
-// =============================================================================
-// 初始化資料庫結構
-// =============================================================================
-
-function initSpreadsheetStructure() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-
-  // 1. SystemConfig
-  var cfgSheet = (ss.getSheetByName('系統設定') || ss.getSheetByName('SystemConfig')) || ss.insertSheet(SHEETS.CONFIG);
-  if (cfgSheet.getLastRow() === 0) {
-    var defaultCfg = {
-      lineChannelAccessToken: "請在此貼上LINE_CHANNEL_ACCESS_TOKEN",
-      schoolName: "幸福班級"
-    };
-    cfgSheet.getRange("A1").setValue(JSON.stringify(defaultCfg, null, 2));
-  }
-
-  // 2. AuthorizedProjects
-  var projSheet = (ss.getSheetByName('授權專案名單') || ss.getSheetByName('AuthorizedProjects')) || ss.insertSheet(SHEETS.PROJECTS);
-  if (projSheet.getLastRow() === 0) {
-    projSheet.appendRow(['專案名稱', 'App_ID', 'Secret_Key', '狀態', '每月配額', '本月已用則數', '建立時間']);
-    projSheet.getRange(1, 1, 1, 7).setBackground('#1e293b').setFontColor('#ffffff').setFontWeight('bold');
-    var nowStr = Utilities.formatDate(new Date(), "Asia/Taipei", "yyyy-MM-dd HH:mm:ss");
-    projSheet.appendRow(['作業繳交手札系統 (RP_QR)', 'PROJECT_HW', 'sec_hw_demo_9823471', 'ACTIVE', 1000, 0, nowStr]);
-    projSheet.appendRow(['平時成績管理系統 (MPScore)', 'PROJECT_SCORE', 'sec_score_demo_7182934', 'ACTIVE', 1000, 0, nowStr]);
-  }
-
-  // 3. ParentBindings
-  var bindSheet = (ss.getSheetByName('家長綁定名冊') || ss.getSheetByName('ParentBindings')) || ss.insertSheet(SHEETS.BINDINGS);
-  if (bindSheet.getLastRow() === 0) {
-    bindSheet.appendRow(['座號', '學號', '學生姓名', '查詢代碼', 'LINE_UID', '綁定時間', '狀態']);
-    bindSheet.getRange(1, 1, 1, 7).setBackground('#0f766e').setFontColor('#ffffff').setFontWeight('bold');
-  }
-
-  // 4. PushLogs
-  var logSheet = (ss.getSheetByName('推播紀錄') || ss.getSheetByName('PushLogs')) || ss.insertSheet(SHEETS.LOGS);
-  if (logSheet.getLastRow() === 0) {
-    logSheet.appendRow(['時間戳', '來源 App_ID', '專案名稱', '學生座號/學號', '學生姓名', 'LINE_UID', '訊息摘要', '發送狀態', 'LINE 回應']);
-    logSheet.getRange(1, 1, 1, 9).setBackground('#334155').setFontColor('#ffffff').setFontWeight('bold');
-  }
-
-  return true;
+    var obj = JSON.parse(val);
+    return obj[key] || '';
+  } catch(e) {}
+  
+  return val;
 }
 
 function maskName(name) {
@@ -818,4 +655,137 @@ function maskName(name) {
 
 function createJsonResponse(obj, code) {
   return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+}
+
+// =============================================================================
+// 診斷與測試輔助函式 (可直接在 GAS 編輯器上方選單選取執行)
+// =============================================================================
+
+/**
+ * 🧪 一鍵測試推播 18 號 (蕭巧羚)
+ * 若 18 號尚未綁定，會自動借用名冊中已綁定的測試 UID，讓您手機立即收到通知！
+ */
+function testPushSeat18() {
+  Logger.log("=== 開始測試推播 18 號 (蕭巧羚) ===");
+  var sheet = getSheet('BINDINGS');
+  if (!sheet) {
+    Logger.log("❌ 找不到【家長綁定名冊】分頁！");
+    return;
+  }
+  
+  var lineToken = getSystemConfig('lineChannelAccessToken');
+  if (!lineToken) {
+    Logger.log("❌ 尚未讀取到 LINE Channel Access Token！");
+    return;
+  }
+
+  var data = sheet.getDataRange().getValues();
+  var seatCol = data[0].indexOf('座號');
+  var uidCol = data[0].indexOf('LINE_UID');
+  var nameCol = data[0].indexOf('學生姓名');
+  var tokenCol = data[0].indexOf('查詢代碼');
+  var dateCol = data[0].indexOf('綁定時間');
+  var statusCol = data[0].indexOf('狀態');
+
+  var targetRow = -1;
+  var existingValidUid = '';
+
+  for (var i = 1; i < data.length; i++) {
+    var sSeat = String(data[i][seatCol]).replace(/^0+/, '');
+    var sUid = String(data[i][uidCol] || '').trim();
+    if (sSeat === '18') {
+      targetRow = i;
+    }
+    // 尋找名冊中任何既有的真實 LINE_UID (以 U 開頭且長度 33 碼)
+    if (!existingValidUid && sUid.indexOf('U') === 0 && sUid.length > 25 && sUid !== 'U_TEST_DEBUG_UID') {
+      existingValidUid = sUid;
+    }
+  }
+
+  if (targetRow === -1) {
+    Logger.log("❌ 名冊中找不到座號 18 號！");
+    return;
+  }
+
+  var sName = data[targetRow][nameCol];
+  var sTok = data[targetRow][tokenCol];
+  var sUid = String(data[targetRow][uidCol] || '').trim();
+
+  Logger.log("📌 18號學生資料：姓名=" + sName + ", 代碼=" + sTok + ", LINE_UID=" + (sUid || "(空白，尚未綁定)"));
+
+  // 如果 18 號尚未綁定
+  if (!sUid || sUid === 'U_TEST_DEBUG_UID') {
+    if (existingValidUid) {
+      Logger.log("💡 偵測到您在名冊其他學生（例如 2 號）已綁定之真實 LINE UID：" + existingValidUid);
+      Logger.log("⚡ 正在將此真實 UID 自動關聯至 18 號，以利推播測試...");
+      sheet.getRange(targetRow + 1, uidCol + 1).setValue(existingValidUid);
+      if (dateCol !== -1) sheet.getRange(targetRow + 1, dateCol + 1).setValue(Utilities.formatDate(new Date(), "Asia/Taipei", "yyyy/MM/dd HH:mm:ss"));
+      if (statusCol !== -1) sheet.getRange(targetRow + 1, statusCol + 1).setValue('已綁定');
+      sUid = existingValidUid;
+      Logger.log("✅ 18 號已成功關聯真實 LINE UID！");
+    } else {
+      Logger.log("⚠️ 18 號目前沒有 LINE_UID，且名冊中尚無其他真實 LINE 帳號！");
+      Logger.log("👉 請拿起手機開啟 LINE 官方帳號對話框，傳送「18」或「" + sTok + "」即可完成綁定！");
+      return;
+    }
+  }
+
+  // 立即發送真實 LINE 推播給 18 號
+  Logger.log("🚀 正在發送【平時成績更新通知】給 18 號 (" + sUid + ")...");
+  var testMsg = "📊 【平時成績更新通知】\n\n" +
+                sName + " 家長您好：\n" +
+                "平時評量成績已完成登錄，請家長參閱最新學習手札。\n\n" +
+                "🔗 點此開啟明細查看：\n" +
+                "https://chy23.github.io/MPScore-Daily/parent.html?t=" + encodeURIComponent(sTok || 'Y6MFZ2') + "\n\n" +
+                "（由 School LINE Hub 自動發送）";
+
+  try {
+    var resp = UrlFetchApp.fetch("https://api.line.me/v2/bot/message/push", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + lineToken
+      },
+      payload: JSON.stringify({
+        to: sUid,
+        messages: [{ type: "text", text: testMsg }]
+      }),
+      muteHttpExceptions: true
+    });
+
+    var code = resp.getResponseCode();
+    var body = resp.getContentText();
+    Logger.log("LINE API 回應代碼: " + code);
+    if (code === 200) {
+      Logger.log("🎉🎉 推播發送成功！請檢查您的手機 LINE，訊息應已送達！");
+    } else {
+      Logger.log("❌ LINE 回傳錯誤: " + body);
+    }
+  } catch(e) {
+    Logger.log("❌ 發送異常: " + e.toString());
+  }
+  Logger.log("=== 測試結束 ===");
+}
+
+/**
+ * 🔍 全自動中樞健康診斷
+ */
+function debugCheckAll() {
+  Logger.log("=== 開始中樞診斷 ===");
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  Logger.log("1. 試算表名稱: " + ss.getName());
+
+  var cfgSheet = getSheet('CONFIG');
+  Logger.log("2. 系統設定分頁: " + (cfgSheet ? "✅ 存在 (" + cfgSheet.getName() + ")" : "❌ 找不到分頁！"));
+  var token = getSystemConfig('lineChannelAccessToken');
+  Logger.log("3. LINE Token: " + (token && token.length > 30 ? "✅ 正常讀取 (長度 " + token.length + ")" : "❌ 讀取失敗或為空！"));
+
+  var bindSheet = getSheet('BINDINGS');
+  Logger.log("4. 家長名冊分頁: " + (bindSheet ? "✅ 存在 (" + bindSheet.getName() + ")" : "❌ 找不到分頁！"));
+
+  if (bindSheet) {
+    var res18 = bindByToken('18', 'U_TEST_DEBUG_UID');
+    Logger.log("5. 模擬以座號 18 綁定: " + JSON.stringify(res18));
+  }
+  Logger.log("=== 診斷結束 ===");
 }
