@@ -71,7 +71,7 @@ function doPost(e) {
 
     // 軌道一：處理 LINE 官方帳號 Webhook 事件
     if (payload.events !== undefined) {
-      return handleLineWebhook(payload.events);
+      return handleLineWebhook(payload);
     }
 
     // 軌道二：處理子專案 API 接入請求 (如 MPScore-Daily, RP_QR_CC_HW)
@@ -93,7 +93,8 @@ function doPost(e) {
 // 軌道一：LINE Webhook 處理邏輯
 // =============================================================================
 
-function handleLineWebhook(events) {
+function handleLineWebhook(input) {
+  var events = Array.isArray(input) ? input : (input && input.events ? input.events : []);
   if (!events || events.length === 0) {
     return ContentService.createTextOutput("OK").setMimeType(ContentService.MimeType.TEXT);
   }
@@ -380,7 +381,7 @@ function processPushMessages(project, lineToken, targets, defaultTemplate) {
 function replyLine(token, replyToken, text) {
   if (!token || !replyToken) return;
   try {
-    UrlFetchApp.fetch("https://api.line.me/v2/bot/message/reply", {
+    var resp = UrlFetchApp.fetch("https://api.line.me/v2/bot/message/reply", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -392,6 +393,7 @@ function replyLine(token, replyToken, text) {
       }),
       muteHttpExceptions: true
     });
+    console.log("replyLine status: " + resp.getResponseCode() + " " + resp.getContentText());
   } catch(e) {
     console.error("replyLine 失敗:", e);
   }
@@ -534,9 +536,11 @@ function getBindingsByLineUserId(lineUserId) {
   var dateCol = headers.indexOf('綁定時間');
 
   var results = [];
+  var targetUid = String(lineUserId || '').trim();
   for (var i = 1; i < data.length; i++) {
     var row = data[i];
-    if (row[uidCol] === lineUserId) {
+    var cellUid = String(row[uidCol] || '').trim();
+    if (cellUid && cellUid === targetUid) {
       results.push({
         studentId: row[idCol] || '',
         seatNo: row[seatCol] || '',
@@ -558,8 +562,10 @@ function unbindByLineUserId(lineUserId) {
   if (uidCol === -1) return 0;
 
   var count = 0;
+  var targetUid = String(lineUserId || '').trim();
   for (var i = 1; i < data.length; i++) {
-    if (data[i][uidCol] === lineUserId) {
+    var cellUid = String(data[i][uidCol] || '').trim();
+    if (cellUid && cellUid === targetUid) {
       sheet.getRange(i + 1, uidCol + 1).setValue('');
       if (statusCol !== -1) sheet.getRange(i + 1, statusCol + 1).setValue('已解除');
       count++;
