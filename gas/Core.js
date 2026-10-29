@@ -147,20 +147,18 @@ function handleLineWebhook(events) {
           return;
         }
 
-        // (c) 智慧代碼綁定比對 (僅在符合綁定格式時比對，一般家長日常對話絕不干擾、絕不亂回覆)
-        var isBindingCandidate = /^[#＃]/.test(userMsg) || 
-                                 /^綁定/i.test(userMsg) || 
-                                 /^[0-9]{1,2}(號)?$/.test(userMsg) || 
-                                 /^[A-Za-z0-9]{4,12}$/.test(userMsg);
+        // (c) 只有「學生專屬查詢代碼」才能觸發綁定 (相容純代碼如 de865y、#de865y、綁定 de865y)
+        // 任何日常中文字、閒聊、貼圖、請假私訊，一律 100% 忽略，絕不回覆、絕不干擾！
+        var codeCandidate = userMsg.replace(/^[#＃]/, '').replace(/^綁定\s*/i, '').trim().toUpperCase();
 
-        if (isBindingCandidate && !/^(查詢|狀態|查學生|解除綁定|取消綁定|解綁)$/.test(userMsg)) {
-          var bindRes = bindByToken(userMsg, userId);
-          if (bindRes.success) {
+        if (codeCandidate && /^[A-Z0-9]{4,12}$/.test(codeCandidate) && !/^(查詢|狀態|查學生|解除綁定|取消綁定|解綁)$/.test(userMsg)) {
+          var bindRes = bindByToken(codeCandidate, userId);
+          if (bindRes && bindRes.success) {
             replyLine(token, replyToken, "🎉 綁定成功！\n\n已成功將 LINE 綁定至學生：【" + maskName(bindRes.studentName) + "】（座號 " + bindRes.seatNo + " 號）。\n日後作業缺繳、評量成果等最新通知將即時發送至此對話！");
             return;
           }
         }
-        // 若為一般日常對話或未相符，維持完全安靜，絕不干擾老師與家長私訊！
+        // 若不是有效代碼或為一般聊天，完全不處理直接結束，絕不干擾老師與家長！
       }
     } catch (err) {
       console.error('Webhook 處理例外:', err);
