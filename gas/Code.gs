@@ -36,6 +36,23 @@ function doGet(e) {
     });
   }
 
+  // 支援子專案透過 GET 請求呼叫 API (如 get_all_bindings_summary, verify_client, send_push 等)，100% 免疫瀏覽器跨域 CORS OPTIONS 限制
+  if (param.action) {
+    if (typeof param.target === 'string') {
+      try { param.target = JSON.parse(param.target); } catch(e) {}
+    }
+    if (typeof param.targets === 'string') {
+      try { param.targets = JSON.parse(param.targets); } catch(e) {}
+    }
+    if (typeof param.students === 'string') {
+      try { param.students = JSON.parse(param.students); } catch(e) {}
+    }
+    if (typeof param.messageTemplate === 'string') {
+      try { param.messageTemplate = JSON.parse(param.messageTemplate); } catch(e) {}
+    }
+    return handleClientApi(param);
+  }
+
   try {
     return HtmlService.createHtmlOutputFromFile('index')
       .setTitle('School LINE Hub - 管理控制中心')
