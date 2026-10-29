@@ -279,7 +279,7 @@ function handleClientApi(payload) {
 
 function processPushMessages(project, lineToken, targets, defaultTemplate) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var logSheet = ss.getSheetByName(SHEETS.LOGS);
+  var logSheet = (ss.getSheetByName('推播紀錄') || ss.getSheetByName('PushLogs'));
   
   var sentCount = 0;
   var failedCount = 0;
@@ -414,7 +414,7 @@ function replyLine(token, replyToken, text) {
 
 function getBindingsByLineUserId(lineUserId) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(SHEETS.BINDINGS);
+  var sheet = (ss.getSheetByName('家長綁定名冊') || ss.getSheetByName('ParentBindings'));
   if (!sheet || sheet.getLastRow() <= 1) return [];
 
   var data = sheet.getDataRange().getValues();
@@ -442,7 +442,7 @@ function getBindingsByLineUserId(lineUserId) {
 
 function unbindByLineUserId(lineUserId) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(SHEETS.BINDINGS);
+  var sheet = (ss.getSheetByName('家長綁定名冊') || ss.getSheetByName('ParentBindings'));
   if (!sheet || sheet.getLastRow() <= 1) return 0;
 
   var data = sheet.getDataRange().getValues();
@@ -461,7 +461,7 @@ function unbindByLineUserId(lineUserId) {
 
 function bindByToken(token, lineUserId) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(SHEETS.BINDINGS);
+  var sheet = (ss.getSheetByName('家長綁定名冊') || ss.getSheetByName('ParentBindings'));
   if (!sheet) return { success: false };
 
   var data = sheet.getDataRange().getValues();
@@ -492,7 +492,7 @@ function bindByToken(token, lineUserId) {
 
 function bindBySeatAndName(seat, name, lineUserId) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(SHEETS.BINDINGS);
+  var sheet = (ss.getSheetByName('家長綁定名冊') || ss.getSheetByName('ParentBindings'));
   if (!sheet) return { success: false };
 
   var data = sheet.getDataRange().getValues();
@@ -527,7 +527,7 @@ function bindBySeatAndName(seat, name, lineUserId) {
 
 function findBindings(target) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(SHEETS.BINDINGS);
+  var sheet = (ss.getSheetByName('家長綁定名冊') || ss.getSheetByName('ParentBindings'));
   if (!sheet || sheet.getLastRow() <= 1) return [];
 
   var data = sheet.getDataRange().getValues();
@@ -576,7 +576,7 @@ function findBindings(target) {
 
 function getAllBindingsSummary() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(SHEETS.BINDINGS);
+  var sheet = (ss.getSheetByName('家長綁定名冊') || ss.getSheetByName('ParentBindings'));
   if (!sheet || sheet.getLastRow() <= 1) return {};
 
   var data = sheet.getDataRange().getValues();
@@ -604,7 +604,7 @@ function getAllBindingsSummary() {
 
 function getActiveBindingsCount() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(SHEETS.BINDINGS);
+  var sheet = (ss.getSheetByName('家長綁定名冊') || ss.getSheetByName('ParentBindings'));
   if (!sheet || sheet.getLastRow() <= 1) return 0;
   var data = sheet.getDataRange().getValues();
   var uidCol = data[0].indexOf('LINE_UID');
@@ -622,7 +622,7 @@ function verifyProjectAuth(appId, appSecret) {
   if (!appId || !appSecret) return null;
 
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(SHEETS.PROJECTS);
+  var sheet = (ss.getSheetByName('授權專案名單') || ss.getSheetByName('AuthorizedProjects'));
   if (!sheet || sheet.getLastRow() <= 1) return null;
 
   var data = sheet.getDataRange().getValues();
@@ -645,7 +645,7 @@ function verifyProjectAuth(appId, appSecret) {
 function incrementProjectUsage(appId, count) {
   if (!count || count <= 0) return;
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(SHEETS.PROJECTS);
+  var sheet = (ss.getSheetByName('授權專案名單') || ss.getSheetByName('AuthorizedProjects'));
   if (!sheet || sheet.getLastRow() <= 1) return;
 
   var data = sheet.getDataRange().getValues();
@@ -660,14 +660,25 @@ function incrementProjectUsage(appId, count) {
 
 function getSystemConfig(key) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(SHEETS.CONFIG);
+  var sheet = ss.getSheetByName('系統設定') || ss.getSheetByName('SystemConfig');
   if (!sheet) return '';
   
+  var val = (sheet.getRange("A1").getValue() || '').toString().trim();
+  if (!val) return '';
+
+  // 1. 若為 JSON 格式
   try {
-    var val = sheet.getRange("A1").getValue();
     var obj = JSON.parse(val);
-    return obj[key] || '';
+    if (obj && obj[key]) return obj[key];
   } catch(e) {}
+
+  // 2. 防呆容錯：若使用者直接在 A1 貼上純 Token 字串
+  if (key === 'lineChannelAccessToken') {
+    if (val.length > 30 && val.indexOf('{') === -1) {
+      return val;
+    }
+  }
+
   return '';
 }
 
@@ -761,7 +772,7 @@ function initSpreadsheetStructure() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
 
   // 1. SystemConfig
-  var cfgSheet = ss.getSheetByName(SHEETS.CONFIG) || ss.insertSheet(SHEETS.CONFIG);
+  var cfgSheet = (ss.getSheetByName('系統設定') || ss.getSheetByName('SystemConfig')) || ss.insertSheet(SHEETS.CONFIG);
   if (cfgSheet.getLastRow() === 0) {
     var defaultCfg = {
       lineChannelAccessToken: "請在此貼上LINE_CHANNEL_ACCESS_TOKEN",
@@ -771,7 +782,7 @@ function initSpreadsheetStructure() {
   }
 
   // 2. AuthorizedProjects
-  var projSheet = ss.getSheetByName(SHEETS.PROJECTS) || ss.insertSheet(SHEETS.PROJECTS);
+  var projSheet = (ss.getSheetByName('授權專案名單') || ss.getSheetByName('AuthorizedProjects')) || ss.insertSheet(SHEETS.PROJECTS);
   if (projSheet.getLastRow() === 0) {
     projSheet.appendRow(['專案名稱', 'App_ID', 'Secret_Key', '狀態', '每月配額', '本月已用則數', '建立時間']);
     projSheet.getRange(1, 1, 1, 7).setBackground('#1e293b').setFontColor('#ffffff').setFontWeight('bold');
@@ -781,14 +792,14 @@ function initSpreadsheetStructure() {
   }
 
   // 3. ParentBindings
-  var bindSheet = ss.getSheetByName(SHEETS.BINDINGS) || ss.insertSheet(SHEETS.BINDINGS);
+  var bindSheet = (ss.getSheetByName('家長綁定名冊') || ss.getSheetByName('ParentBindings')) || ss.insertSheet(SHEETS.BINDINGS);
   if (bindSheet.getLastRow() === 0) {
     bindSheet.appendRow(['座號', '學號', '學生姓名', '查詢代碼', 'LINE_UID', '綁定時間', '狀態']);
     bindSheet.getRange(1, 1, 1, 7).setBackground('#0f766e').setFontColor('#ffffff').setFontWeight('bold');
   }
 
   // 4. PushLogs
-  var logSheet = ss.getSheetByName(SHEETS.LOGS) || ss.insertSheet(SHEETS.LOGS);
+  var logSheet = (ss.getSheetByName('推播紀錄') || ss.getSheetByName('PushLogs')) || ss.insertSheet(SHEETS.LOGS);
   if (logSheet.getLastRow() === 0) {
     logSheet.appendRow(['時間戳', '來源 App_ID', '專案名稱', '學生座號/學號', '學生姓名', 'LINE_UID', '訊息摘要', '發送狀態', 'LINE 回應']);
     logSheet.getRange(1, 1, 1, 9).setBackground('#334155').setFontColor('#ffffff').setFontWeight('bold');
