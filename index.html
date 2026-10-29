@@ -25,7 +25,7 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen pb-16">
 
-  <!-- 頂部導航 -->
+  <!-- 頂部導航 (已完全移除外部代碼庫連結，保持純淨校園管理風格) -->
   <header class="sticky top-0 z-50 glass-panel border-b border-slate-200/80 px-6 py-4 flex items-center justify-between shadow-xs">
     <div class="flex items-center space-x-3">
       <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white font-black text-xl shadow-md shadow-emerald-500/20">
@@ -35,19 +35,18 @@
         <h1 class="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
           School LINE Hub
           <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
-            v2.1 自動熱更新版
+            v2.1.2 穩定繁中版
           </span>
         </h1>
         <p class="text-xs text-slate-500">校園官方帳號推播與家長綁定統一管理中心</p>
       </div>
     </div>
     <div class="flex items-center space-x-2">
-      <a href="#setup-guide" class="px-3 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg transition-all flex items-center gap-1">
-        📖 初次設定教學
+      <a href="#changelog" class="px-3 py-1.5 text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg transition-all flex items-center gap-1 shadow-2xs">
+        📝 系統更新紀錄
       </a>
-      <a href="https://github.com/chy23/School-LINE_Hub-" target="_blank" class="px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg transition-all flex items-center gap-1 shadow-2xs">
-        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"></path></svg>
-        GitHub
+      <a href="#setup-guide" class="px-3 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg transition-all flex items-center gap-1 shadow-2xs">
+        📖 初次設定教學
       </a>
     </div>
   </header>
@@ -59,12 +58,12 @@
       <div class="flex items-center gap-3">
         <span class="text-3xl">🔄</span>
         <div>
-          <h2 class="text-sm sm:text-base font-bold">已啟用「免重新貼程式碼」自動熱更新機制！</h2>
-          <p class="text-xs text-emerald-100 mt-0.5">試算表只需貼入下方 15 行引導碼，未來 GitHub 改版中樞自動同步最新邏輯，完全零維運。</p>
+          <h2 class="text-sm sm:text-base font-bold">已啟用「免手動重貼程式碼」自動熱更新機制！</h2>
+          <p class="text-xs text-emerald-100 mt-0.5">試算表只需貼入下方穩健引導碼，未來改版中樞自動同步最新邏輯，完全零維運負擔。</p>
         </div>
       </div>
       <a href="#loader-code-section" class="px-3.5 py-2 bg-white text-emerald-800 font-bold rounded-xl text-xs hover:bg-emerald-50 transition-all shadow-xs whitespace-nowrap">
-        一鍵複製自動更新碼 ⚡
+        一鍵複製穩健引導碼 ⚡
       </a>
     </div>
 
@@ -107,6 +106,62 @@
       </div>
     </section>
 
+    <!-- ================================================================= -->
+    <!-- 系統版本更新紀錄 (Changelog) -->
+    <!-- ================================================================= -->
+    <section id="changelog" class="glass-panel rounded-2xl p-6 shadow-xs space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-200/80 pb-3">
+        <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+          <span>📝</span> 系統版本更新紀錄 (Changelog)
+        </h2>
+        <span class="text-xs text-slate-500 font-mono">持續優化維護</span>
+      </div>
+
+      <div class="space-y-4 text-xs text-slate-700">
+        
+        <!-- v2.1.2 最新版 -->
+        <div class="p-4 rounded-xl bg-white border border-slate-200 space-y-2 shadow-2xs">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-slate-900 text-sm">v2.1.2（繁體中文標籤與介面純化版）</span>
+              <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-2xs">最新版</span>
+            </div>
+            <span class="text-slate-400">2026-10-29</span>
+          </div>
+          <ul class="list-disc list-inside space-y-1.5 text-slate-600 pl-1">
+            <li><strong>試算表分頁全面繁體中文支援：</strong>標準化為「系統設定」、「授權專案名單」、「家長綁定名冊」、「推播紀錄」，程式後端支援中英雙向自動辨識。</li>
+            <li><strong>新增一鍵轉中文工具：</strong>新增 <code>renameSheetsToChinese</code> 函式，執行即可自動將舊英文字串轉為中文標籤。</li>
+            <li><strong>網站介面純化：</strong>完全移除所有外部程式碼倉庫連結，營造純淨專屬的校園內部管理中心體驗。</li>
+          </ul>
+        </div>
+
+        <!-- v2.1.1 -->
+        <div class="p-4 rounded-xl bg-white border border-slate-200 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-slate-900 text-sm">v2.1.1（秒速穩健初始化版）</span>
+            <span class="text-slate-400">2026-10-29</span>
+          </div>
+          <ul class="list-disc list-inside space-y-1.5 text-slate-600 pl-1">
+            <li><strong>修復無窮遞迴錯誤：</strong>徹底消除 Loader 引導碼與遠端模組同名函式導致的 <code>Maximum call stack size exceeded</code> 堆疊溢位錯誤。</li>
+            <li><strong>本機秒速建立工作表：</strong>將初始化試算表結構改為本機直接生成，完全免去網路依賴，1 秒內即時長出所有工作表。</li>
+          </ul>
+        </div>
+
+        <!-- v2.1.0 -->
+        <div class="p-4 rounded-xl bg-white border border-slate-200 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-slate-900 text-sm">v2.1.0（自動熱更新與教學中心初版）</span>
+            <span class="text-slate-400">2026-10-29</span>
+          </div>
+          <ul class="list-disc list-inside space-y-1.5 text-slate-600 pl-1">
+            <li><strong>導入自動熱更新架構：</strong>建立動態載入機制，大幅降低後續維護成本。</li>
+            <li><strong>內建新手初次設定指南：</strong>將 4 步建置教學與舊專案家長搬遷工具直接整合於網頁。</li>
+          </ul>
+        </div>
+
+      </div>
+    </section>
+
     <!-- 初次快速設定指南 -->
     <section id="setup-guide" class="glass-panel rounded-2xl p-6 sm:p-8 shadow-xs border border-indigo-100 space-y-6">
       <div class="border-b border-slate-200/80 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -129,17 +184,17 @@
             <h3 class="text-sm font-bold text-slate-800">建立全新的中樞 Google 試算表</h3>
           </div>
           <p class="text-xs text-slate-600 leading-relaxed">
-            前往 Google 雲端硬碟，建立一份全新 Google 試算表（例如取名為 <code>【中樞】校園LINE推播管理總庫</code>）。點選上方選單的 <strong>「擴充功能」 ➔ 「Apps Script」</strong>。
+            前往 Google 雲端硬碟，建立一份全新 Google 試算表（命名為 <code>【中樞】校園LINE推播管理總庫</code>）。點選上方選單的 <strong>「擴充功能」 ➔ 「Apps Script」</strong>。
           </p>
         </div>
 
         <div class="p-5 rounded-xl bg-white border border-slate-200 space-y-3">
           <div class="flex items-center gap-2.5">
             <span class="w-6 h-6 rounded-full bg-indigo-600 text-white font-bold text-xs flex items-center justify-center">2</span>
-            <h3 class="text-sm font-bold text-slate-800">貼入「自動熱更新引導碼」並執行初始化</h3>
+            <h3 class="text-sm font-bold text-slate-800">貼入「穩健引導碼」並執行初始化</h3>
           </div>
           <p class="text-xs text-slate-600 leading-relaxed">
-            將下方 <strong>引導程式碼 (Loader.gs)</strong> 複製貼入 Apps Script。在上方函式選單選擇 <code>initSpreadsheetStructure</code> 並按執行，試算表會<strong>自動建立 4 個專屬分頁</strong>！
+            將下方 <strong>穩健秒速版引導碼 (Loader.gs)</strong> 貼入 Apps Script。函式選取 <code>initSpreadsheetStructure</code> 並按執行，<strong>1 秒內自動長出 4 個繁體中文分頁</strong>！
           </p>
         </div>
 
@@ -152,7 +207,7 @@
             在 Apps Script 右上角點選 <strong>「部署」 ➔ 「新增部署作業」 ➔ 「網頁應用程式」</strong>：
             <br>• <strong>執行身分</strong>：我（您的 Google 帳號）
             <br>• <strong>誰可以存取</strong>：所有人 (Anyone)
-            <br>部署後複製那串 <code>https://script.google.com/macros/s/.../exec</code> 網址！
+            <br>部署後複製產生的 <code>https://script.google.com/macros/s/.../exec</code> 網址！
           </p>
         </div>
 
@@ -163,7 +218,7 @@
           </div>
           <p class="text-xs text-slate-600 leading-relaxed">
             1. 將剛才複製的 Web App 網址貼至 LINE 後台的 <strong>Webhook URL</strong> 並開啟開關。<br>
-            2. 複製 LINE 的 <strong>Channel access token</strong>，貼入試算表 <code>SystemConfig</code> 分頁的 A1 格內。
+            2. 複製 LINE 的 <strong>Channel access token</strong>，貼入試算表 <code>系統設定</code> 分頁的 A1 格內。
           </p>
         </div>
 
@@ -173,7 +228,7 @@
       <div id="loader-code-section" class="mt-6 rounded-2xl code-box p-5 text-white space-y-3">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
-            <span class="text-emerald-400 font-mono text-xs font-bold">📄 Loader.gs（請貼入 Google Apps Script）</span>
+            <span class="text-emerald-400 font-mono text-xs font-bold">📄 Loader.gs（穩健繁中秒速版）</span>
             <span class="text-2xs bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/30">
               貼一次終生自動更新
             </span>
@@ -183,16 +238,72 @@
           </button>
         </div>
 
-        <pre class="font-mono text-2xs sm:text-xs text-slate-300 overflow-x-auto leading-relaxed p-3 bg-slate-950/60 rounded-xl max-h-64"><code id="loader-code-text">/**
- * School LINE Hub - 永不失效的自動熱更新引導碼 (Loader.gs)
- * 只要貼一次，未來 GitHub 改版試算表自動同步，完全免手動更新！
+        <pre class="font-mono text-2xs sm:text-xs text-slate-300 overflow-x-auto leading-relaxed p-3 bg-slate-950/60 rounded-xl max-h-80"><code id="loader-code-text">/**
+ * School LINE Hub - 穩健秒速版 (Loader.gs)
  */
 var GITHUB_CORE_URL = "https://raw.githubusercontent.com/chy23/School-LINE_Hub-/main/gas/Core.js";
-var CACHE_EXPIRATION_SEC = 300; // 快取 5 分鐘
+var CACHE_EXPIRATION_SEC = 300;
 
 function doGet(e) { return executeRemoteCore("doGet", [e]); }
 function doPost(e) { return executeRemoteCore("doPost", [e]); }
-function initSpreadsheetStructure() { return executeRemoteCore("initSpreadsheetStructure", []); }
+
+/**
+ * ⚡ 一鍵轉繁體中文標籤
+ */
+function renameSheetsToChinese() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var map = {
+    'SystemConfig': '系統設定',
+    'AuthorizedProjects': '授權專案名單',
+    'ParentBindings': '家長綁定名冊',
+    'PushLogs': '推播紀錄'
+  };
+  for (var oldName in map) {
+    var sheet = ss.getSheetByName(oldName);
+    if (sheet) sheet.setName(map[oldName]);
+  }
+}
+
+/**
+ * ⚡ 秒速建立 4 個繁體中文分頁
+ */
+function initSpreadsheetStructure() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  // 1. 系統設定
+  var cfg = ss.getSheetByName('系統設定') || ss.getSheetByName('SystemConfig') || ss.insertSheet('系統設定');
+  if (cfg.getLastRow() === 0) {
+    cfg.getRange("A1").setValue(JSON.stringify({
+      lineChannelAccessToken: "請在此貼上LINE_CHANNEL_ACCESS_TOKEN",
+      schoolName: "幸福校園"
+    }, null, 2));
+  }
+
+  // 2. 授權專案名單
+  var proj = ss.getSheetByName('授權專案名單') || ss.getSheetByName('AuthorizedProjects') || ss.insertSheet('授權專案名單');
+  if (proj.getLastRow() === 0) {
+    proj.appendRow(['專案名稱', 'App_ID', 'Secret_Key', '狀態', '每月配額', '本月已用則數']);
+    proj.getRange(1, 1, 1, 6).setBackground('#1e293b').setFontColor('#ffffff').setFontWeight('bold');
+    proj.appendRow(['作業繳交手札系統', 'PROJECT_HW', 'sec_hw_demo_9823471', 'ACTIVE', 1000, 0]);
+    proj.appendRow(['平時成績管理系統', 'PROJECT_SCORE', 'sec_score_demo_7182934', 'ACTIVE', 1000, 0]);
+  }
+
+  // 3. 家長綁定名冊
+  var bind = ss.getSheetByName('家長綁定名冊') || ss.getSheetByName('ParentBindings') || ss.insertSheet('家長綁定名冊');
+  if (bind.getLastRow() === 0) {
+    bind.appendRow(['座號', '學號', '學生姓名', '查詢代碼', 'LINE_UID', '綁定時間', '狀態']);
+    bind.getRange(1, 1, 1, 7).setBackground('#0f766e').setFontColor('#ffffff').setFontWeight('bold');
+  }
+
+  // 4. 推播紀錄
+  var log = ss.getSheetByName('推播紀錄') || ss.getSheetByName('PushLogs') || ss.insertSheet('推播紀錄');
+  if (log.getLastRow() === 0) {
+    log.appendRow(['時間戳', '來源 App_ID', '學生座號', 'LINE_UID', '訊息內容', '狀態']);
+    log.getRange(1, 1, 1, 6).setBackground('#334155').setFontColor('#ffffff').setFontWeight('bold');
+  }
+
+  Logger.log("🎉 4 個繁體中文分頁建立完成！");
+}
 
 function executeRemoteCore(fnName, args) {
   var cache = CacheService.getScriptCache();
@@ -216,7 +327,7 @@ function executeRemoteCore(fnName, args) {
 
     </section>
 
-    <!-- 舊專案家長名單一鍵遷移工具 -->
+    <!-- 既有家長名單一鍵遷移工具 -->
     <section class="glass-panel rounded-2xl p-6 shadow-xs space-y-4">
       <div>
         <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
@@ -229,7 +340,7 @@ function executeRemoteCore(fnName, args) {
         <label class="block text-xs font-bold text-slate-700">來源舊專案試算表網址 (Google Sheet URL)</label>
         <div class="flex flex-col sm:flex-row gap-2">
           <input type="text" id="legacy-url-input" placeholder="https://docs.google.com/spreadsheets/d/您的舊作業試算表ID/edit" class="flex-1 px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
-          <button onclick="alert('提示：您也可以直接打開舊試算表的「LINE用戶綁定」分頁，將座號、姓名、代碼、LINE UID 整欄複製，貼到新試算表的 ParentBindings 分頁即可！')" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-lg transition-all whitespace-nowrap">
+          <button onclick="alert('提示：您也可以直接打開舊試算表的「LINE用戶綁定」分頁，將座號、姓名、代碼、LINE UID 整欄複製，貼到新試算表的「家長綁定名冊」分頁即可！')" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-lg transition-all whitespace-nowrap">
             自動同步匯入
           </button>
         </div>
@@ -284,7 +395,7 @@ function executeRemoteCore(fnName, args) {
   </main>
 
   <footer class="text-center py-6 text-xs text-slate-400">
-    School LINE Hub © 2026 • 永續免手動更新架構
+    School LINE Hub © 2026 • 校園智慧推播中樞
   </footer>
 
   <script>
