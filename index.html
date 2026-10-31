@@ -1,9 +1,53 @@
+<!--
+================================================================================
+🏫 系統開發與作者版權資訊 (System Author & Development Metadata)
+--------------------------------------------------------------------------------
+系統名稱：School LINE Hub - 校園官方帳號智慧推播管理中樞
+系統建立：新北市林口區麗園國小 楊家驊老師 (Chiahua Yang)
+開發理念：專為第一線校園與班級經營設計，實現「家長單一綁定、跨專案共享、私訊零干擾保護、
+          智慧額度管控」之微服務中樞，消弭教師重複設定與跨表維護的繁複負擔。
+
+【系統開發歷程與里程碑時間表 (Development Timeline & Milestones)】
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 2026-10-18 ~ 10-20：作業手札系統奠基 (RP_QR_CC_HW)
+   • 研發「作業繳交手札系統」，整合家長端雙向即時查閱與導師端批次快速清點。
+   • 規劃雙生高解析度 Favicon 與離線同步佇列（Offline Sync Queue）。
+   • 成功讓全班家長透過數位化介面掌握課堂作業缺繳與訂正歷程。
+
+📅 2026-10-21 ~ 10-25：學生平時成績歷程系統 (MPScore-Daily)
+   • 研發「學生平時成績歷程管理系統」，支援多元評量向度、成績分項雷達圖與手機端卡片模擬。
+   • 發現多系統並行時「各自申請 LINE 官方帳號、家長重複加好友、每月 200 則額度分散」之痛點。
+
+📅 2026-10-28：校園推播中樞架構萌芽 (School LINE Hub 誕生)
+   • 提出「校園單一官方帳號，多子專案共用中樞」跨系統解決方案。
+   • 確立「一對多」微服務拓撲：家長僅需綁定一次，全校所有數位系統皆能無痛推播。
+   • 設計 Google 試算表 4 大核心繁體中文分頁（系統設定、授權專案名單、家長綁定名冊、推播紀錄）。
+
+📅 2026-10-29：中樞核心穩健化、授權驗證與「私訊零干擾」突破 (v2.1 ~ v2.2.4)
+   • [v2.1.1] 徹底解決 Google Apps Script 遞迴堆疊溢位 (Maximum call stack size exceeded)。
+   • [v2.2.0] 建立 App ID / Secret Key 專案授權安全金鑰驗證機制，加入 testPushSeat18 診斷工具。
+   • [v2.2.2] 突破性私訊防干擾：實作「純代碼模式」，家長閒聊、貼圖與請假日常對話 100% 靜音保護。
+   • [v2.2.3] 介面現代化：版本紀錄收納至角落彈窗，活躍中樞網址、連線檢測、金鑰專區與 AI 提示詞置頂。
+   • [v2.2.4] 量身設計「Apple 風格對話泡泡 ‧ 校園學士帽 ‧ 廣播脈衝」高對比 Favicon 體系，徹底告別灰色地球。
+
+📅 2026-10-30 ~ 10-31：跨網域 CORS 突破、雙軌對話機制與長效維護體系
+   • doGet 支援 API 連線呼叫，突破跨網域 CORS 限制，讓純前端系統免後端亦能安全調用中樞。
+   • 深入解析 LINE Official Account 平台原生機制（家長發話激活對話框、試算表全日誌存證）。
+   • 系統邁入高可用穩定運行，成為校園智慧化數位工具最堅實的中樞橋樑。
+================================================================================
+-->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>School LINE Hub - 校園官方帳號推播管理中心</title>
+
+  <!-- 系統建立者與作者資訊 -->
+  <meta name="author" content="新北市林口區麗園國小 楊家驊老師 (Chiahua Yang)">
+  <meta name="creator" content="新北市林口區麗園國小 楊家驊老師">
+  <meta name="copyright" content="新北市林口區麗園國小 楊家驊老師">
+  <meta name="description" content="School LINE Hub - 由新北市林口區麗園國小楊家驊老師規劃開發之校園官方帳號智慧推播中樞">
   
   <!-- 專屬高識別度 Favicon 體系 (告別預設灰色地球) -->
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIiB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIj4KICA8ZGVmcz4KICAgIDwhLS0gQmFja2dyb3VuZCBHcmFkaWVudDogTElORSBHcmVlbiB0byBTY2hvb2wgRW1lcmFsZCAtLT4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iaHViQmciIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMDZDNzU1Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iNDAlIiBzdG9wLWNvbG9yPSIjMTBCOTgxIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzA0Nzg1NyIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KCiAgICA8IS0tIEdsYXNzIFRvcCBDdXJ2YXR1cmUgSGlnaGxpZ2h0IC0tPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJnbGFzc1RvcCIgeDE9IjAlIiB5MT0iMCUiIHgyPSIwJSIgeTI9IjEwMCUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjZmZmZmZmIiBzdG9wLW9wYWNpdHk9IjAuMzUiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjZmZmZmZmIiBzdG9wLW9wYWNpdHk9IjAiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CgogICAgPCEtLSBHb2xkZW4gQWNjZW50IEdyYWRpZW50IC0tPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJnb2xkR3JhZCIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiNGREUwNDciLz4KICAgICAgPHN0b3Agb2Zmc2V0PSI1MCUiIHN0b3AtY29sb3I9IiNGNTlFMEIiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjRDk3NzA2Ii8+CiAgICA8L2xpbmVhckdyYWRpZW50PgoKICAgIDwhLS0gU29mdCBEZXB0aCBTaGFkb3cgLS0+CiAgICA8ZmlsdGVyIGlkPSJzaGFkb3ciIHg9Ii0yMCUiIHk9Ii0yMCUiIHdpZHRoPSIxNDAlIiBoZWlnaHQ9IjE0MCUiPgogICAgICA8ZmVEcm9wU2hhZG93IGR4PSIwIiBkeT0iMTAiIHN0ZERldmlhdGlvbj0iMTIiIGZsb29kLWNvbG9yPSIjMDY0ZTNiIiBmbG9vZC1vcGFjaXR5PSIwLjQ1Ii8+CiAgICA8L2ZpbHRlcj4KICA8L2RlZnM+CgogIDwhLS0gQXBwbGUgU3F1aXJjbGUgT3V0ZXIgQ29udGFpbmVyIC0tPgogIDxyZWN0IHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiByeD0iMTE1IiBmaWxsPSJ1cmwoI2h1YkJnKSIvPgogIDxyZWN0IHdpZHRoPSI1MTIiIGhlaWdodD0iMjYwIiByeD0iMTE1IiBmaWxsPSJ1cmwoI2dsYXNzVG9wKSIvPgogIDxyZWN0IHg9IjIiIHk9IjIiIHdpZHRoPSI1MDgiIGhlaWdodD0iNTA4IiByeD0iMTEzIiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iNCIgc3Ryb2tlLW9wYWNpdHk9IjAuMyIvPgoKICA8IS0tIE1haW4gQ2VudHJhbCBNb3RpZjogUHVyZSBXaGl0ZSBDcmlzcCBTcGVlY2ggQnViYmxlIC0tPgogIDxnIGZpbHRlcj0idXJsKCNzaGFkb3cpIj4KICAgIDwhLS0gU3BlZWNoIGJ1YmJsZSBib2R5ICsgdGFpbCAtLT4KICAgIDxwYXRoIGQ9Ik0gMTIwIDEwMCAKICAgICAgICAgICAgIEwgMzkyIDEwMCAKICAgICAgICAgICAgIEEgNjQgNjQgMCAwIDEgNDU2IDE2NCAKICAgICAgICAgICAgIEwgNDU2IDMxNiAKICAgICAgICAgICAgIEEgNjQgNjQgMCAwIDEgMzkyIDM4MCAKICAgICAgICAgICAgIEwgMjEwIDM4MCAKICAgICAgICAgICAgIEwgMTI0IDQzNiAKICAgICAgICAgICAgIEEgMTIgMTIgMCAwIDEgMTA0IDQyNiAKICAgICAgICAgICAgIEwgMTA2IDM4MCAKICAgICAgICAgICAgIEEgNjQgNjQgMCAwIDEgNTYgMzE2IAogICAgICAgICAgICAgTCA1NiAxNjQgCiAgICAgICAgICAgICBBIDY0IDY0IDAgMCAxIDEyMCAxMDAgWiIgCiAgICAgICAgICBmaWxsPSIjRkZGRkZGIiAvPgoKICAgIDwhLS0gSW5zaWRlIENvbnRlbnQ6IEVkdWNhdGlvbmFsIEdyYWR1YXRpb24gQ2FwIChTY2hvb2wpICsgSHViIEJyb2FkY2FzdGluZyBQdWxzZSAtLT4KICAgIDwhLS0gU2Nob29sIE1vcnRhcmJvYXJkIENhcCAoRGVlcCBTbGF0ZSAvIE5hdnkpIC0tPgogICAgPGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCwgLTYpIj4KICAgICAgPCEtLSBDYXAgQmFzZSBTa3VsbGNhcCAtLT4KICAgICAgPHBhdGggZD0iTSAyMDQgMjUwIFEgMjU2IDI3OCwgMzA4IDI1MCBMIDMwOCAyNjggUSAyNTYgMjk2LCAyMDQgMjY4IFoiIGZpbGw9IiMxRTI5M0IiLz4KCiAgICAgIDwhLS0gRGlhbW9uZCBCb2FyZCAtLT4KICAgICAgPHBvbHlnb24gcG9pbnRzPSIyNTYsMTcwIDM2NiwyMTIgMjU2LDI1NCAxNDYsMjEyIiBmaWxsPSIjMEYxNzJBIi8+CiAgICAgIDxwb2x5Z29uIHBvaW50cz0iMjU2LDE3OCAzNTAsMjEyIDI1NiwyNDYgMTYyLDIxMiIgZmlsbD0iIzFFMjkzQiIvPgoKICAgICAgPCEtLSBDZW50ZXIgR29sZCBCdXR0b24gLS0+CiAgICAgIDxjaXJjbGUgY3g9IjI1NiIgY3k9IjIxMiIgcj0iOCIgZmlsbD0idXJsKCNnb2xkR3JhZCkiLz4KCiAgICAgIDwhLS0gR29sZGVuIFRhc3NlbCBoYW5naW5nIHJpZ2h0IC0tPgogICAgICA8cGF0aCBkPSJNIDI1NiAyMTIgUSAzMTIgMjE4LCAzMzIgMjUyIiBmaWxsPSJub25lIiBzdHJva2U9IiNGNTlFMEIiIHN0cm9rZS13aWR0aD0iNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgICAgIDxwb2x5Z29uIHBvaW50cz0iMzI4LDI1MCAzMzgsMjgwIDMyNCwyODAiIGZpbGw9InVybCgjZ29sZEdyYWQpIi8+CiAgICA8L2c+CgogICAgPCEtLSBIdWIgQnJvYWRjYXN0aW5nIFB1bHNlIFJpbmdzIChCcm9hZGNhc3Rpbmcgbm90aWZpY2F0aW9ucyB0byBwYXJlbnRzKSAtLT4KICAgIDxnIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzA1OTY2OSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIj4KICAgICAgPCEtLSBXYXZlIDEgKElubmVyIExlZnQgJiBSaWdodCkgLS0+CiAgICAgIDxwYXRoIGQ9Ik0gMTc0IDMwOCBBIDQ4IDQ4IDAgMCAxIDE3NCAzNDAiIHN0cm9rZS13aWR0aD0iNyIvPgogICAgICA8cGF0aCBkPSJNIDMzOCAzMDggQSA0OCA0OCAwIDAgMCAzMzggMzQwIiBzdHJva2Utd2lkdGg9IjciLz4KICAgICAgCiAgICAgIDwhLS0gV2F2ZSAyIChNaWRkbGUgTGVmdCAmIFJpZ2h0KSAtLT4KICAgICAgPHBhdGggZD0iTSAxNDggMjk2IEEgNzYgNzYgMCAwIDEgMTQ4IDM1MiIgc3Ryb2tlLXdpZHRoPSI3IiBvcGFjaXR5PSIwLjc1Ii8+CiAgICAgIDxwYXRoIGQ9Ik0gMzY0IDI5NiBBIDc2IDc2IDAgMCAwIDM2NCAzNTIiIHN0cm9rZS13aWR0aD0iNyIgb3BhY2l0eT0iMC43NSIvPgogICAgPC9nPgoKICAgIDwhLS0gQ2VudHJhbCBTaWduYWwgQ29yZSAvIE5vdGlmaWNhdGlvbiBCYWRnZSBEb3QgLS0+CiAgICA8Y2lyY2xlIGN4PSIyNTYiIGN5PSIzMjQiIHI9IjE0IiBmaWxsPSIjMDZDNzU1Ii8+CiAgICA8Y2lyY2xlIGN4PSIyNTYiIGN5PSIzMjQiIHI9IjciIGZpbGw9IiNGRkZGRkYiLz4KICA8L2c+Cjwvc3ZnPg==">
@@ -474,6 +518,7 @@
 
         <pre class="font-mono text-2xs text-slate-300 overflow-x-auto leading-relaxed p-3 bg-slate-950/70 rounded-xl max-h-60"><code id="loader-code-text">/**
  * School LINE Hub - 穩健秒速版 (Loader.gs)
+ * 建立於：新北市林口區麗園國小 楊家驊老師 (Chiahua Yang)
  */
 var GITHUB_CORE_URL = "https://raw.githubusercontent.com/chy23/School-LINE_Hub-/main/gas/Core.js";
 var CACHE_EXPIRATION_SEC = 300;
@@ -660,6 +705,21 @@ function executeRemoteCore(fnName, args) {
 
   <!-- JavaScript 交互腳本 -->
   <script>
+    // 🏫 系統建立者資訊與開發歷程彩蛋 (Console Easter Egg)
+    console.log(
+      "%c🏫 School LINE Hub - 校園官方帳號智慧推播管理中樞\n" +
+      "%c建立於：新北市林口區麗園國小 楊家驊老師 (Chiahua Yang)\n" +
+      "%c【開發歷程與時間表】\n" +
+      "• 2026/10/18-20: 作業手札系統 (RP_QR_CC_HW) 奠基，首創家長雙向作業即時查閱與離線同步\n" +
+      "• 2026/10/21-25: 平時成績系統 (MPScore-Daily) 上線，萌生跨系統集中推播中樞構想\n" +
+      "• 2026/10/28: 創立 School LINE Hub，確立「家長單一綁定、多專案共享中樞」架構\n" +
+      "• 2026/10/29: 實作純代碼比對與私訊 100% 靜音防干擾模式，發布 v2.2.4 高解析度圖示\n" +
+      "• 2026/10/30-31: 突破跨網域 CORS、釐清 LINE 雙軌原生機制，邁入長期穩定維運",
+      "font-size: 14px; font-weight: bold; color: #059669; padding: 4px 0;",
+      "font-size: 12px; font-weight: bold; color: #1e293b; padding: 2px 0;",
+      "font-size: 11px; color: #475569; line-height: 1.6;"
+    );
+
     const ACTIVE_HUB_URL = "https://script.google.com/macros/s/AKfycby4yrSdmztcbnmdHlGdLqqM9nBRT4vo6DwK8LmW1R-wi22qEKC_vcD-VvrDnUTp4Bm_Yg/exec";
 
     // 1. 複製活躍中樞網址
