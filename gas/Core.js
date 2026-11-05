@@ -208,15 +208,20 @@ function handleClientApi(payload) {
     if (typeof target === 'string') {
       try { target = JSON.parse(target); } catch(e) { target = { token: target }; }
     }
-    if (!target.token && payload.token) target.token = payload.token;
-    if (!target.seatNo && payload.seatNo) target.seatNo = payload.seatNo;
-    if (!target.studentName && payload.studentName) target.studentName = payload.studentName;
+    var queryToken = (target.token || payload.token || '').toString().trim().toUpperCase();
 
-    var bindings = findBindings(target);
+    // 🛡️ 資安防禦：未授權公開查詢「強制限定依專屬代碼 (Token)」，嚴禁依座號/學號盲查或列舉攻擊
+    if (!queryToken || queryToken.length < 4) {
+      return createJsonResponse({
+        status: 'error',
+        message: '未授權存取：公開查詢必須提供學生專屬查詢代碼 (Token)，以保護學生個資安全！'
+      }, 400);
+    }
+
+    var bindings = findBindings({ token: queryToken });
     var botId = getLineBotBasicId();
     var cleanBotId = botId ? (botId.indexOf('@') === 0 ? botId : ('@' + botId)) : '';
-    var token = (target.token || (bindings.length > 0 ? bindings[0].token : '')).toString().trim().toUpperCase();
-    var bindUrl = (cleanBotId && token) ? ('https://line.me/R/oaMessage/' + encodeURIComponent(cleanBotId) + '/?' + encodeURIComponent(token)) : '';
+    var bindUrl = cleanBotId ? ('https://line.me/R/oaMessage/' + encodeURIComponent(cleanBotId) + '/?' + encodeURIComponent(queryToken)) : '';
 
     return createJsonResponse({
       status: 'success',
