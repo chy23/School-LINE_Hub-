@@ -886,3 +886,32 @@ function debugCheckAll() {
   }
   Logger.log("=== 診斷結束 ===");
 }
+
+// =============================================================================
+// 自動掛載至全域物件 (徹底杜絕 Loader.gs 在 GAS V8 環境下的遞迴呼叫 Call Stack Exceeded)
+// =============================================================================
+(function(g) {
+  if (!g) return;
+  g.doGet = doGet;
+  g.doPost = doPost;
+  g.getSheet = getSheet;
+  g.handleLineWebhook = handleLineWebhook;
+  g.handleClientApi = handleClientApi;
+  g.processPushMessages = processPushMessages;
+  g.replyLine = replyLine;
+  g.bindByToken = bindByToken;
+  g.findBindings = findBindings;
+  g.getAllBindingsSummary = getAllBindingsSummary;
+  g.getBindingsByLineUserId = getBindingsByLineUserId;
+  g.unbindByLineUserId = unbindByLineUserId;
+  g.getActiveBindingsCount = getActiveBindingsCount;
+  g.verifyProjectAuth = verifyProjectAuth;
+  g.incrementProjectUsage = incrementProjectUsage;
+  g.getSystemConfig = getSystemConfig;
+  g.getLineBotBasicId = getLineBotBasicId;
+  g.maskName = maskName;
+  g.createJsonResponse = createJsonResponse;
+  g.testPushSeat18 = testPushSeat18;
+  g.debugCheckAll = debugCheckAll;
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+
