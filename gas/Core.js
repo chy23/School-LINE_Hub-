@@ -1,6 +1,7 @@
 /**
  * =========================================================================
  * School LINE Hub - 核心後端完整版 (gas/Code.gs)
+ * 建立於：新北市林口區麗園國小 楊家驊老師 (Chiahua Yang)
  * =========================================================================
  * 
  * 核心職責：
@@ -201,7 +202,33 @@ function handleClientApi(payload) {
     return createJsonResponse({ status: 'success', message: '中樞工作表初始化建立完成' });
   }
 
-  // 2. 驗證金鑰
+  // 2. 驗證金鑰（若為家長端安全查詢，開放依 token 檢查綁定狀態）
+  if (action === 'check_student_binding' || (action === 'get_student_binding' && (!appId || !appSecret))) {
+    var target = payload.target || {};
+    if (typeof target === 'string') {
+      try { target = JSON.parse(target); } catch(e) { target = { token: target }; }
+    }
+    if (!target.token && payload.token) target.token = payload.token;
+    if (!target.seatNo && payload.seatNo) target.seatNo = payload.seatNo;
+    if (!target.studentName && payload.studentName) target.studentName = payload.studentName;
+
+    var bindings = findBindings(target);
+    var botId = getLineBotBasicId();
+    var cleanBotId = botId ? (botId.indexOf('@') === 0 ? botId : ('@' + botId)) : '';
+    var token = (target.token || (bindings.length > 0 ? bindings[0].token : '')).toString().trim().toUpperCase();
+    var bindUrl = (cleanBotId && token) ? ('https://line.me/R/oaMessage/' + encodeURIComponent(cleanBotId) + '/?' + encodeURIComponent(token)) : '';
+
+    return createJsonResponse({
+      status: 'success',
+      isBound: bindings.length > 0,
+      boundCount: bindings.length,
+      studentName: bindings.length > 0 ? maskName(bindings[0].studentName) : '',
+      seatNo: bindings.length > 0 ? bindings[0].seatNo : '',
+      botBasicId: cleanBotId,
+      bindUrl: bindUrl
+    });
+  }
+
   var project = verifyProjectAuth(appId, appSecret);
   if (!project) {
     return createJsonResponse({
@@ -228,12 +255,19 @@ function handleClientApi(payload) {
   if (action === 'get_student_binding') {
     var target = payload.target || {};
     var bindings = findBindings(target);
+    var botId = getLineBotBasicId();
+    var cleanBotId = botId ? (botId.indexOf('@') === 0 ? botId : ('@' + botId)) : '';
+    var token = (target.token || (bindings.length > 0 ? bindings[0].token : '')).toString().trim().toUpperCase();
+    var bindUrl = (cleanBotId && token) ? ('https://line.me/R/oaMessage/' + encodeURIComponent(cleanBotId) + '/?' + encodeURIComponent(token)) : '';
+
     return createJsonResponse({
       status: 'success',
       isBound: bindings.length > 0,
       boundCount: bindings.length,
       studentName: bindings.length > 0 ? maskName(bindings[0].studentName) : '',
-      seatNo: bindings.length > 0 ? bindings[0].seatNo : ''
+      seatNo: bindings.length > 0 ? bindings[0].seatNo : '',
+      botBasicId: cleanBotId,
+      bindUrl: bindUrl
     });
   }
 
@@ -505,7 +539,8 @@ function findBindings(target) {
         lineUserId: uid,
         studentId: sId,
         seatNo: sSeat,
-        studentName: sName
+        studentName: sName,
+        token: sToken
       });
     }
   }
@@ -650,22 +685,61 @@ function getSystemConfig(key) {
   if (!sheet) return '';
   
   var val = (sheet.getRange("A1").getValue() || '').toString().trim();
-  if (!val) return '';
 
-  // 1. 若為純 Token 字串 (直接回傳)
+  // 1. 若為 JSON 格式
+  try {
+    var obj = JSON.parse(val);
+    if (obj && obj[key] !== undefined) return obj[key];
+  } catch(e) {}
+
+  // 2. 若為純 Token 字串 (直接回傳)
   if (key === 'lineChannelAccessToken') {
     if (val.length > 30 && val.indexOf('{') === -1) {
       return val;
     }
   }
 
-  // 2. 若為 JSON 格式
-  try {
-    var obj = JSON.parse(val);
-    return obj[key] || '';
-  } catch(e) {}
+  // 3. 支援讀取 lineBotBasicId (支援 B1 格或 A2 格防呆)
+  if (key === 'lineBotBasicId') {
+    var b1 = (sheet.getRange("B1").getValue() || '').toString().trim();
+    if (b1) return b1;
+    var a2 = (sheet.getRange("A2").getValue() || '').toString().trim();
+    if (a2.indexOf('@') === 0) return a2;
+  }
   
-  return val;
+  return '';
+}
+
+// 取得 LINE Bot Basic ID（優先讀取系統設定，次之透過 Token 線上向 LINE 官方查詢並快取）
+function getLineBotBasicId() {
+  var manualId = getSystemConfig('lineBotBasicId');
+  if (manualId) return manualId;
+
+  var cache = CacheService.getScriptCache();
+  var cachedId = cache.get('hub_line_bot_basic_id');
+  if (cachedId) return cachedId;
+
+  var lineToken = getSystemConfig('lineChannelAccessToken');
+  if (!lineToken) return '';
+
+  try {
+    var resp = UrlFetchApp.fetch("https://api.line.me/v2/bot/info", {
+      headers: { "Authorization": "Bearer " + lineToken },
+      muteHttpExceptions: true
+    });
+    if (resp.getResponseCode() === 200) {
+      var data = JSON.parse(resp.getContentText());
+      if (data && data.basicId) {
+        var id = data.basicId;
+        cache.put('hub_line_bot_basic_id', id, 21600); // 快取 6 小時
+        return id;
+      }
+    }
+  } catch(e) {
+    console.error('自動向 LINE 查詢 bot basicId 失敗:', e);
+  }
+
+  return '';
 }
 
 function maskName(name) {
