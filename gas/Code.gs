@@ -694,8 +694,6 @@ function getActiveBindingsCount() {
   }
   return count;
 }
-  return count;
-}
 
 function verifyProjectAuth(appId, appSecret) {
   if (!appId || !appSecret) return null;
