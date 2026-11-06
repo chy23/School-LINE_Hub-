@@ -146,7 +146,8 @@ function handleLineWebhook(input) {
           } else {
             var msg = "📋 【已綁定學生名冊】\n";
             bindings.forEach(function(b, idx) {
-              msg += "\n" + (idx + 1) + ". " + maskName(b.studentName) + "（" + (b.seatNo ? "座號 " + b.seatNo : b.studentId) + "）\n" +
+              var parentInfo = (b.parentCount && b.parentCount > 1) ? (" ‧ " + b.parentCount + "位共同關注") : "";
+              msg += "\n" + (idx + 1) + ". " + maskName(b.studentName) + "（" + (b.seatNo ? "座號 " + b.seatNo : b.studentId) + parentInfo + "）\n" +
                      "   綁定時間：" + (b.boundAt ? b.boundAt.substring(0, 10) : "已綁定");
             });
             msg += "\n\n💡 只要老師發布各項專案通知（作業缺交、成績單等），系統將自動為您推播！";
@@ -173,7 +174,15 @@ function handleLineWebhook(input) {
         if (codeCandidate && /^[A-Z0-9]{4,12}$/.test(codeCandidate) && !/^(查詢|狀態|查學生|解除綁定|取消綁定|解綁)$/.test(userMsg)) {
           var bindRes = bindByToken(codeCandidate, userId);
           if (bindRes && bindRes.success) {
-            replyLine(token, replyToken, "🎉 綁定成功！\n\n已成功將 LINE 綁定至學生：【" + maskName(bindRes.studentName) + "】（座號 " + bindRes.seatNo + " 號）。\n日後作業缺繳、評量成果等最新通知將即時發送至此對話！");
+            var replyTxt = '';
+            if (bindRes.isAlreadyBound) {
+              replyTxt = "ℹ️ 您先前已經成功綁定過【" + maskName(bindRes.studentName) + "】（座號 " + bindRes.seatNo + " 號）囉！\n\n目前各項評量與校園通知均正常接收中，無須重複綁定。";
+            } else if (bindRes.isNewJoin) {
+              replyTxt = "🎉 共同關注綁定成功！\n\n您已成功加入為學生【" + maskName(bindRes.studentName) + "】（座號 " + bindRes.seatNo + " 號）的第 " + bindRes.parentCount + " 位共同關注家長。\n\n日後作業缺繳、評量成果等最新通知將同步發送至此對話！";
+            } else {
+              replyTxt = "🎉 綁定成功！\n\n已成功將 LINE 綁定至學生：【" + maskName(bindRes.studentName) + "】（座號 " + bindRes.seatNo + " 號）。\n\n日後作業缺繳、評量成果等最新通知將即時發送至此對話！";
+            }
+            replyLine(token, replyToken, replyTxt);
             return;
           }
         }
@@ -489,12 +498,27 @@ function bindByToken(tokenOrQuery, lineUserId) {
 
     if (isMatch) {
       var nowStr = Utilities.formatDate(new Date(), "Asia/Taipei", "yyyy/MM/dd HH:mm:ss");
-      sheet.getRange(i + 1, uidCol + 1).setValue(lineUserId);
+      var currentUidCell = (row[uidCol] || '').toString().trim();
+      var uidList = currentUidCell ? currentUidCell.split(/[\s,，\n]+/).filter(function(u) { return u.indexOf('U') === 0; }) : [];
+
+      var isAlreadyBound = uidList.indexOf(lineUserId) !== -1;
+      if (!isAlreadyBound) {
+        uidList.push(lineUserId);
+      }
+
+      var newUidCell = uidList.join(', ');
+      sheet.getRange(i + 1, uidCol + 1).setValue(newUidCell);
       if (dateCol !== -1) sheet.getRange(i + 1, dateCol + 1).setValue(nowStr);
-      if (statusCol !== -1) sheet.getRange(i + 1, statusCol + 1).setValue('已綁定');
-      
+      if (statusCol !== -1) {
+        var statusText = uidList.length > 1 ? ('已綁定 (' + uidList.length + '位家長)') : '已綁定';
+        sheet.getRange(i + 1, statusCol + 1).setValue(statusText);
+      }
+
       return {
         success: true,
+        isAlreadyBound: isAlreadyBound,
+        isNewJoin: !isAlreadyBound && uidList.length > 1,
+        parentCount: uidList.length,
         studentName: row[nameCol],
         seatNo: row[seatCol]
       };
@@ -525,8 +549,11 @@ function findBindings(target) {
 
   for (var i = 1; i < data.length; i++) {
     var row = data[i];
-    var uid = (row[uidCol] || '').toString().trim();
-    if (!uid || uid.indexOf('U') !== 0) continue;
+    var uidCell = (row[uidCol] || '').toString().trim();
+    if (!uidCell) continue;
+
+    var uidList = uidCell.split(/[\s,，\n]+/).filter(function(u) { return u.indexOf('U') === 0; });
+    if (uidList.length === 0) continue;
 
     var sSeat = (row[seatCol] || '').toString().replace(/^0+/, '');
     var sId = (row[idCol] || '').toString().trim();
@@ -540,12 +567,16 @@ function findBindings(target) {
     else if (tName && sName && tName === sName) isMatch = true;
 
     if (isMatch) {
-      matched.push({
-        lineUserId: uid,
-        studentId: sId,
-        seatNo: sSeat,
-        studentName: sName,
-        token: sToken
+      // 支援多位共同家長：為每個已綁定的合法 LINE_UID 建立一筆發送對象
+      uidList.forEach(function(singleUid) {
+        matched.push({
+          lineUserId: singleUid,
+          studentId: sId,
+          seatNo: sSeat,
+          studentName: sName,
+          token: sToken,
+          parentCount: uidList.length
+        });
       });
     }
   }
@@ -569,10 +600,11 @@ function getAllBindingsSummary() {
   for (var i = 1; i < data.length; i++) {
     var row = data[i];
     var key = row[seatCol] || row[idCol] || row[tokenCol] || ('row_' + i);
-    var hasUid = !!((row[uidCol] || '').toString().trim());
+    var uids = (row[uidCol] || '').toString().split(/[\s,，\n]+/).filter(function(u) { return u.indexOf('U') === 0; });
 
     summary[key] = {
-      isBound: hasUid,
+      isBound: uids.length > 0,
+      boundCount: uids.length,
       studentName: maskName((row[nameCol] || '').toString()),
       seatNo: row[seatCol]
     };
@@ -597,12 +629,16 @@ function getBindingsByLineUserId(lineUserId) {
   for (var i = 1; i < data.length; i++) {
     var row = data[i];
     var cellUid = String(row[uidCol] || '').trim();
-    if (cellUid && cellUid === targetUid) {
+    if (!cellUid) continue;
+
+    var uids = cellUid.split(/[\s,，\n]+/).filter(function(u) { return u.indexOf('U') === 0; });
+    if (uids.indexOf(targetUid) !== -1) {
       results.push({
         studentId: row[idCol] || '',
         seatNo: row[seatCol] || '',
         studentName: row[nameCol] || '',
-        boundAt: row[dateCol] ? row[dateCol].toString() : ''
+        boundAt: row[dateCol] ? row[dateCol].toString() : '',
+        parentCount: uids.length
       });
     }
   }
@@ -622,9 +658,22 @@ function unbindByLineUserId(lineUserId) {
   var targetUid = String(lineUserId || '').trim();
   for (var i = 1; i < data.length; i++) {
     var cellUid = String(data[i][uidCol] || '').trim();
-    if (cellUid && cellUid === targetUid) {
-      sheet.getRange(i + 1, uidCol + 1).setValue('');
-      if (statusCol !== -1) sheet.getRange(i + 1, statusCol + 1).setValue('已解除');
+    if (!cellUid) continue;
+
+    var uids = cellUid.split(/[\s,，\n]+/).filter(function(u) { return u.indexOf('U') === 0; });
+    var idx = uids.indexOf(targetUid);
+    if (idx !== -1) {
+      uids.splice(idx, 1);
+      var newCell = uids.join(', ');
+      sheet.getRange(i + 1, uidCol + 1).setValue(newCell);
+      if (statusCol !== -1) {
+        if (uids.length === 0) {
+          sheet.getRange(i + 1, statusCol + 1).setValue('未綁定');
+        } else {
+          var statusText = uids.length > 1 ? ('已綁定 (' + uids.length + '位家長)') : '已綁定';
+          sheet.getRange(i + 1, statusCol + 1).setValue(statusText);
+        }
+      }
       count++;
     }
   }
@@ -640,9 +689,11 @@ function getActiveBindingsCount() {
 
   var count = 0;
   for (var i = 1; i < data.length; i++) {
-    var u = (data[i][uidCol] || '').toString().trim();
-    if (u.indexOf('U') === 0) count++;
+    var uids = (data[i][uidCol] || '').toString().split(/[\s,，\n]+/).filter(function(u) { return u.indexOf('U') === 0; });
+    count += uids.length;
   }
+  return count;
+}
   return count;
 }
 
